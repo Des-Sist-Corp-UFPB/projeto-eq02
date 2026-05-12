@@ -15,4 +15,4 @@ spring:
 logging:
   level:
     root: WARN
-    br.ufpb.dsc.mercado: INFO
+    br.ufpb.dsc.cirurgias: INFO

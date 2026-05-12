@@ -12,10 +12,10 @@
     </parent>
 
     <groupId>br.ufpb.dsc</groupId>
-    <artifactId>mercado</artifactId>
+    <artifactId>cirurgias</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>mercado</name>
+    <name>cirurgias</name>
     <description>Projeto base DSC - UFPB Campus IV</description>
 
     <properties>

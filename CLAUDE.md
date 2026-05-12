@@ -1,7 +1,7 @@
-# Memória do Projeto — Mercado DSC/UFPB
+# Memória do Projeto — Cirurgias DSC/UFPB
 
 ## Identidade do Projeto
-- **Nome**: Sistema Mercado — Projeto Base DSC
+- **Nome**: Sistema Cirurgias — Projeto Base DSC
 - **Disciplina**: Desenvolvimento de Sistemas Corporativos
 - **Professor**: Rodrigo Rebouças
 - **Instituição**: Universidade Federal da Paraíba — Campus IV
@@ -22,7 +22,7 @@
 
 ## Estrutura de Pacotes
 ```
-br.ufpb.dsc.mercado
+br.ufpb.dsc.cirurgias
 ├── config/          # Configurações Spring (Security, Web, etc.)
 ├── controller/      # Controllers MVC (recebem requests HTTP)
 ├── domain/          # Entidades JPA (mapeamento objeto-relacional)
@@ -67,14 +67,14 @@ mvn versions:display-dependency-updates -Pversions
 docker compose -f docker/docker-compose.dev.yml --profile scan up trivy
 
 # Trivy scan da imagem (depois de fazer o build)
-docker build -f docker/Dockerfile -t mercado:latest .
-docker run --rm aquasec/trivy image mercado:latest
+docker build -f docker/Dockerfile -t cirurgias:latest .
+docker run --rm aquasec/trivy image cirurgias:latest
 ```
 
 ### Produção
 ```bash
 # Build imagem de produção
-docker build -f docker/Dockerfile -t mercado:latest .
+docker build -f docker/Dockerfile -t cirurgias:latest .
 
 # Subir produção (requer .env configurado)
 docker compose -f docker/docker-compose.prod.yml up -d
@@ -114,7 +114,7 @@ SpotBugs e OWASP Dependency-Check são lentos. Separar em perfil permite que o b
 | SpotBugs + FindSecBugs | SAST bytecode Java | `mvn verify -Psecurity` |
 | Semgrep | SAST código-fonte | `semgrep --config=auto src/` |
 | Trivy (fs) | Vulnerabilidades em libs | docker compose `--profile scan` |
-| Trivy (image) | Vulnerabilidades na imagem Docker | `trivy image mercado:latest` |
+| Trivy (image) | Vulnerabilidades na imagem Docker | `trivy image cirurgias:latest` |
 | OWASP Dependency-Check | CVEs em dependências | `mvn verify -Psecurity` |
 
 ## Para Alunos: Próximos Passos Sugeridos

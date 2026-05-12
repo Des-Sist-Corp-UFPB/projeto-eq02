@@ -34,11 +34,11 @@
 #
 # CONFIGURAÇÃO no servidor (fazer uma vez):
 #   1. Criar usuário: sudo adduser ghactions && sudo usermod -aG docker ghactions
-#   2. Criar diretório: mkdir -p /home/ghactions/mercado/docker
-#   3. Criar o arquivo .env: cp .env.example /home/ghactions/mercado/.env
+#   2. Criar diretório: mkdir -p /home/ghactions/cirurgias/docker
+#   3. Criar o arquivo .env: cp .env.example /home/ghactions/cirurgias/.env
 #      e preencher DATABASE_USERNAME e DATABASE_PASSWORD com valores reais.
 #   4. Subir o banco na primeira vez:
-#      cd /home/ghactions/mercado
+#      cd /home/ghactions/cirurgias
 #      docker compose -f docker/docker-compose.prod.yml up -d postgres
 # =============================================================================
 
@@ -52,7 +52,7 @@ on:
 # Variáveis de ambiente globais (disponíveis em todos os jobs)
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}   # ex.: usuario/mercado → ghcr.io/usuario/mercado
+  IMAGE_NAME: ${{ github.repository }}   # ex.: usuario/cirurgias → ghcr.io/usuario/cirurgias
 
 jobs:
 
@@ -228,7 +228,7 @@ jobs:
           context: .
           file: docker/Dockerfile
           load: true
-          tags: mercado:scan
+          tags: cirurgias:scan
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -238,7 +238,7 @@ jobs:
       - name: Trivy — scan de vulnerabilidades na imagem Docker
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: mercado:scan
+          image-ref: cirurgias:scan
           format: table
           severity: HIGH,CRITICAL
           exit-code: '1'
@@ -292,7 +292,7 @@ jobs:
           username: ghactions
           key: ${{ secrets.SSH_DEPLOY_KEY }}
           source: docker/docker-compose.prod.yml
-          target: /home/ghactions/mercado/
+          target: /home/ghactions/cirurgias/
 
       # Script de deploy executado no servidor via SSH.
       # envs: passa variáveis de ambiente do Actions para o script remoto.
@@ -312,7 +312,7 @@ jobs:
           script: |
             set -euo pipefail
 
-            DEPLOY_DIR="/home/ghactions/mercado"
+            DEPLOY_DIR="/home/ghactions/cirurgias"
             COMPOSE_FILE="$DEPLOY_DIR/docker/docker-compose.prod.yml"
 
             echo "======================================================"
@@ -365,7 +365,7 @@ jobs:
               if [ "$i" -eq 18 ]; then
                 echo "✗ ERRO: aplicação não ficou saudável após 90 segundos"
                 echo "--- Últimas 80 linhas do log da aplicação ---"
-                docker logs mercado-app-prod --tail 80
+                docker logs cirurgias-app-prod --tail 80
                 exit 1
               fi
               echo "  aguardando... ($i/18, $(( i * 5 ))s)"

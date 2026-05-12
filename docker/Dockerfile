@@ -10,7 +10,7 @@
 #   - Separação entre ambiente de build e runtime
 #
 # Como construir:
-#   docker build -f docker/Dockerfile -t mercado:latest .
+#   docker build -f docker/Dockerfile -t cirurgias:latest .
 # =============================================================================
 
 # ---- Estágio 1: Build -------------------------------------------------------
@@ -31,8 +31,8 @@ FROM eclipse-temurin:21-jre-jammy AS runtime
 
 # Criar usuário não-root por segurança
 # Executar aplicações como root em container é má prática de segurança
-RUN groupadd --gid 1001 mercado && \
-    useradd --uid 1001 --gid mercado --shell /bin/false mercado
+RUN groupadd --gid 1001 cirurgias && \
+    useradd --uid 1001 --gid cirurgias --shell /bin/false cirurgias
 
 WORKDIR /app
 
@@ -40,10 +40,10 @@ WORKDIR /app
 COPY --from=builder /build/target/*.jar app.jar
 
 # Definir owner do arquivo
-RUN chown mercado:mercado app.jar
+RUN chown cirurgias:cirurgias app.jar
 
 # Trocar para usuário não-root
-USER mercado
+USER cirurgias
 
 EXPOSE 8080
 

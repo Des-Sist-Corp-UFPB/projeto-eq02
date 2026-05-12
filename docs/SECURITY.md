@@ -40,8 +40,8 @@ semgrep --config=p/java src/ --severity WARNING
 docker compose -f docker/docker-compose.dev.yml --profile scan up trivy
 
 # Scan da imagem Docker de produção
-docker build -f docker/Dockerfile -t mercado:latest .
-docker run --rm aquasec/trivy image mercado:latest --severity HIGH,CRITICAL
+docker build -f docker/Dockerfile -t cirurgias:latest .
+docker run --rm aquasec/trivy image cirurgias:latest --severity HIGH,CRITICAL
 ```
 
 ## OWASP Dependency-Check

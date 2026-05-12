@@ -1,4 +1,4 @@
-# Sistema Mercado — Projeto Base DSC/UFPB
+# Sistema Cirurgias — Projeto Base DSC/UFPB
 
 Projeto base (boilerplate) para a disciplina **Desenvolvimento de Sistemas Corporativos**.
 
@@ -113,7 +113,7 @@ docker compose -f docker/docker-compose.dev.yml up --build
 
 Aguarde as mensagens de inicialização. Quando aparecer algo como:
 ```
-Started MercadoApplication in X.XXX seconds
+Started CirurgiasApplication in X.XXX seconds
 ```
 ...a aplicação está pronta.
 
@@ -174,7 +174,7 @@ O Docker Desktop não está em execução. Abra o aplicativo Docker Desktop e ag
 O container do PostgreSQL ainda não subiu. Aguarde alguns segundos e tente novamente. Você pode verificar com:
 ```bash
 docker compose -f docker/docker-compose.dev.yml ps
-# O container "mercado-postgres-dev" deve estar com status "healthy"
+# O container "cirurgias-postgres-dev" deve estar com status "healthy"
 ```
 
 ### Erro de compilação Java
@@ -313,7 +313,7 @@ Se alguma etapa falhar, clique nela para ver os logs detalhados.
 base_projeto/
 ├── .github/workflows/
 │   └── deploy.yml           # Pipeline CI/CD (GitHub Actions)
-├── src/main/java/br/ufpb/dsc/mercado/
+├── src/main/java/br/ufpb/dsc/cirurgias/
 │   ├── config/              # Configurações (Security, GlobalModelAttributes, etc.)
 │   ├── controller/          # Controllers HTTP + HTMX
 │   ├── domain/              # Entidades JPA

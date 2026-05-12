@@ -1,4 +1,9 @@
 spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cirurgias_dev
+    username: root
+    password: password
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       # validate: o Hibernate verifica o schema mas não modifica nada.
@@ -16,4 +21,4 @@ spring:
 
 logging:
   level:
-    br.ufpb.dsc.mercado: DEBUG
+    br.ufpb.dsc.cirurgias: DEBUG
