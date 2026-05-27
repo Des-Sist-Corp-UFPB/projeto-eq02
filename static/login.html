@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - FinancIA's</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #1e293b; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); width: 100%; max-width: 350px; }
+        h1 { margin-top: 0; text-align: center; color: #38bdf8; margin-bottom: 5px;}
+        p { text-align: center; color: #94a3b8; font-size: 0.9em; margin-bottom: 25px;}
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #334155; border-radius: 6px; background: #0f172a; color: white; box-sizing: border-box; outline: none;}
+        input:focus { border-color: #38bdf8; }
+        button { width: 100%; padding: 14px; background: linear-gradient(to right, #38bdf8, #0284c7); color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s;}
+        button:hover { opacity: 0.9; }
+        .link { text-align: center; margin-top: 20px; font-size: 0.9em; color: #94a3b8;}
+        .link a { color: #38bdf8; text-decoration: none; font-weight: bold;}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔐 FinancIA's</h1>
+        <p>Seu assistente financeiro inteligente</p>
+        <form id="loginForm">
+            <input type="email" id="email" placeholder="E-mail" required>
+            <input type="text" id="cpf" placeholder="CPF (Apenas números)" required maxlength="11">
+            <button type="submit">Entrar no Chat</button>
+        </form>
+        <div class="link">
+            Não tem conta? <a href="/static/register.html">Cadastre-se</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const cpf = document.getElementById('cpf').value;
+            
+            const btn = e.target.querySelector('button');
+            btn.textContent = 'Carregando...';
+            btn.disabled = true;
+
+            const res = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, cpf })
+            });
+            
+            if(res.ok) {
+                // Força a atualização do Cookie
+                document.cookie = "auth_cpf=" + cpf + "; path=/";
+                
+                // Limpeza agressiva: localStorage + sessionStorage + IndexedDB (usado pelo Chainlit moderno)
+                localStorage.clear();
+                sessionStorage.clear();
+                if (window.indexedDB && indexedDB.databases) {
+                    indexedDB.databases().then(dbs => {
+                        dbs.forEach(db => { indexedDB.deleteDatabase(db.name) });
+                    });
+                } else if (window.indexedDB) {
+                    indexedDB.deleteDatabase('chainlit');
+                    indexedDB.deleteDatabase('localforage');
+                }
+                
+                // Aguarda 100ms para dar tempo de limpar o IndexedDB antes do redirecionamento
+                setTimeout(() => {
+                    window.location.href = '/chat';
+                }, 100);
+            } else {
+                const data = await res.json();
+                alert(data.detail || 'Erro ao fazer login.');
+                btn.textContent = 'Entrar no Chat';
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

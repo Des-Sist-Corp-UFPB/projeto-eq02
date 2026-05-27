@@ -1,343 +1,85 @@
-# Sistema Cirurgias — Projeto Base DSC/UFPB
+# 🏦 FinancIA's - Assistente Financeiro Inteligente
 
-Projeto base (boilerplate) para a disciplina **Desenvolvimento de Sistemas Corporativos**.
+Bem-vindo ao **FinancIA's**! Este é um projeto de agente conversacional autônomo (baseado em LangGraph) projetado para atuar como o seu assistente financeiro pessoal. Ele não é apenas um chat, é um agente que possui acesso a ferramentas (Tools) para consultar, criar e gerenciar o seu fluxo de caixa diretamente em um banco de dados relacional.
 
-**Professor**: Rodrigo Rebouças | **UFPB — Campus IV**
+## 🌟 Principais Recursos
+- **Agente Autônomo Consultivo (LangGraph):** Capaz de tomar decisões, consultar dados do usuário e atuar como um verdadeiro consultor financeiro usando a regra 50/30/20.
+- **Onboarding Dinâmico e Inteligente:** Através de roteiros gerados no backend, o agente identifica se o usuário é novo (e pede a renda com educação em um bate-papo) ou se já é cliente (oferecendo ações diretas).
+- **Ferramentas Avançadas (MCP):** O agente se conecta a um servidor MCP (Model Context Protocol) para rodar simulações de investimentos (juros compostos), analisar seu fluxo de caixa e atualizar sua renda e metas em tempo real.
+- **Gravação de Áudio ao Vivo e Respostas em Voz (TTS):** Envie mensagens de voz diretamente pela interface! O backend transcreve o áudio via OpenAI Whisper e o Agente responde não apenas em texto, mas com áudio gerado dinamicamente (Text-to-Speech) para você ouvir a resposta.
+- **Suporte a Compras Parceladas:** O sistema compreende e fatiar compras parceladas no cartão de crédito, diluindo o impacto do valor total apenas na proporção exata da parcela nos meses vigentes.
+- **Login e Segurança:** Páginas de cadastro e login protegidas. O assistente só funciona se você for um usuário autenticado.
+- **Integração com Supabase:** Banco de dados remoto robusto, pronto para o futuro uso do `pgvector`.
+- **Interface Híbrida (Chainlit + HTML/JS):** Telas de Login fluidas desenvolvidas em Vanilla JS que redirecionam perfeitamente para o chat avançado no Chainlit.
+- **Containerização Total:** Toda a aplicação e suas integrações rodam perfeitamente em um único ambiente Docker isolado.
 
----
+## 🤖 O Que o Agente Sabe Fazer? (Funcionalidades)
+Graças à integração com múltiplas ferramentas (Tools) via protocolo MCP, o Assistente Financeiro atua de forma autônoma nestas frentes:
 
-## Tecnologias
+1. **Gestão de Renda e Onboarding:**
+   - Detecta novos usuários e conduz um bate-papo inicial amigável para descobrir e registrar a renda mensal.
+   - Atualiza a renda a qualquer momento caso o usuário receba um aumento ou mude de emprego.
 
-| Camada | Tecnologia |
-|--------|-----------|
-| Backend | Java 21 + Spring Boot 3.4.5 |
-| Templates | Thymeleaf + HTMX 2.0 |
-| Frontend | Bootstrap 5.3 |
-| Banco | PostgreSQL 16 |
-| Migrações | Flyway 11 |
-| Segurança | Spring Security 6 |
-| Build | Maven 3.9 |
-| CI/CD | GitHub Actions |
+2. **Controle de Gastos e Despesas:**
+   - **Registro Natural:** O usuário pode apenas dizer "Gastei 50 reais de ifood ontem" e o agente entende o valor, a data e a categoria (Alimentação), salvando no banco.
+   - **Correção Inteligente de Gastos:** Cometeu um erro ao registrar? Basta dizer "na verdade o lanche não foi 15 reais, foi 10" e o assistente identifica automaticamente qual gasto você está corrigindo e atualiza o valor no banco de dados.
+   - **Compras Parceladas:** Registre compras divididas no cartão (ex: "Comprei uma TV de R$5000 em 10x"). O Agente deduzirá de forma fracionada o valor de cada parcela exclusivamente no mês correspondente do seu fluxo de caixa.
+   - **Comandos de Voz:** Sem vontade de digitar? Aperte o microfone na tela, fale seus gastos ou faça perguntas por áudio e veja o agente transcrever e executar a tarefa!
+   - **Consultas e Relatórios:** O agente pesquisa no histórico e traz resumos como "Quanto gastei com lazer esse mês?".
 
----
+3. **Orçamentos e Metas Mensais:**
+   - O usuário pode definir limites (ex: "Não quero gastar mais de R$ 500 com transporte").
+   - **Alerta Proativo:** Sempre que um novo gasto for registrado, o agente verifica sozinho se a meta foi ultrapassada e puxa a orelha do usuário com conselhos se necessário.
 
-## Guia de Instalação para Alunos
+4. **Consultoria e Fluxo de Caixa (Regra 50/30/20):**
+   - O agente não apenas anota, ele analisa! Ele compara os gastos dos últimos 30 dias com a renda atual.
+   - Aplica a famosa regra 50% (Necessidades), 30% (Desejos) e 20% (Futuro), mostrando onde o usuário está errando no orçamento e calculando a taxa de queima mensal (*burn rate*).
 
-### Passo 1 — Instale o Java 21
+5. **Simulação de Investimentos:**
+   - Se o usuário perguntar sobre o futuro, o agente roda um simulador matemático de juros compostos.
+   - Responde dúvidas como: "Se eu investir R$ 300 por mês rendendo 10% ao ano, quanto terei em 5 anos?".
 
-O projeto requer Java 21. Recomendamos o **Eclipse Temurin** (distribuição gratuita da Adoptium).
+6. **Memória Contínua:**
+   - Salva informações chave sobre os objetivos do cliente na memória (ex: "Economizando para casar") e usa esse contexto no início de novas conversas para dar um toque extremamente pessoal ao atendimento.
 
-**Windows / macOS / Linux:**
-1. Acesse https://adoptium.net/temurin/releases/?version=21
-2. Baixe o instalador para seu sistema operacional
-3. Execute o instalador e siga as instruções
+## 🏗️ Arquitetura do Sistema
+1. **Frontend HTML/JS (`static/`):** Telas rápidas e fluidas para gerenciar o acesso sem pedir dados excessivos logo de cara.
+2. **Servidor API (`api_server.py`):** Feito em FastAPI, ele hospeda os arquivos HTML, valida o login com o banco de dados e emite um Cookie seguro.
+3. **Chat Engine (`chat_app.py`):** Construído em Chainlit. Ele intercepta o Cookie de login, identifica o usuário via CPF e aciona o Agente, delegando a responsabilidade do roteiro inicial para o backend.
+4. **Servidor de Ferramentas (`mcp_server.py`):** Implementa o protocolo MCP (*Model Context Protocol*) para expor de forma limpa, modular e segura todas as ferramentas de banco de dados, memória e matemática (simuladores).
+5. **Cérebro (`agent.py`):** O Grafo de Estado (LangGraph) do agente, conectando o LLM (OpenAI) ao servidor de ferramentas usando adaptadores oficiais do MCP.
 
-**Verificar se está correto:**
+## 🚀 Como Executar o Projeto Localmente
+
+A aplicação foi feita para ser **100% conteinerizada**, facilitando ao máximo o processo de execução.
+
+### 1. Pré-requisitos
+- Ter o [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado na sua máquina.
+- Uma chave da API da **OpenAI** (`OPENAI_API_KEY`).
+- Um projeto no **Supabase** configurado com as tabelas do projeto.
+
+### 2. Configurando as Chaves
+Na raiz do projeto, crie ou garanta que o seu arquivo `.env` contenha as seguintes variáveis com suas credenciais:
+```env
+SUPABASE_URL=sua_url_do_supabase
+SUPABASE_SERVICE_KEY=sua_service_key_do_supabase
+OPENAI_API_KEY=sua_chave_da_openai
+CHAINLIT_AUTH_SECRET=uma-chave-aleatoria-bem-segura
+```
+
+### 3. Rodando com Docker
+Abra o terminal na pasta raiz do projeto e execute:
 ```bash
-java -version
-# Esperado: openjdk version "21.x.x" ...
+docker-compose up --build -d
 ```
 
-> **Dica para Windows:** durante a instalação, marque a opção *"Add to PATH"* e *"Set JAVA_HOME"*.
-
----
-
-### Passo 2 — Instale o Maven
-
-O Maven é a ferramenta de build do projeto.
-
-**macOS (com Homebrew):**
-```bash
-brew install maven
-```
-
-**Windows:**
-1. Acesse https://maven.apache.org/download.cgi
-2. Baixe o arquivo `apache-maven-3.x.x-bin.zip`
-3. Extraia para uma pasta (ex.: `C:\maven`)
-4. Adicione `C:\maven\bin` à variável de ambiente `PATH`
-
-**Linux (Ubuntu/Debian):**
-```bash
-sudo apt install maven
-```
-
-**Verificar:**
-```bash
-mvn -version
-# Esperado: Apache Maven 3.x.x
-```
-
----
-
-### Passo 3 — Instale o Docker Desktop
-
-O Docker sobe o banco de dados PostgreSQL sem precisar instalar nada manualmente.
-
-1. Acesse https://www.docker.com/products/docker-desktop/
-2. Baixe e instale o Docker Desktop para seu sistema
-3. Abra o Docker Desktop e aguarde ele inicializar (ícone na barra de tarefas)
-
-**Verificar:**
-```bash
-docker -v
-# Esperado: Docker version 27.x.x ...
-```
-
-> **Importante:** o Docker Desktop deve estar **em execução** sempre que você for rodar o projeto.
-
----
-
-### Passo 4 — Clone o repositório
-
-```bash
-git clone <URL-DO-REPOSITÓRIO>
-cd base_projeto
-```
-
-> Substitua `<URL-DO-REPOSITÓRIO>` pela URL fornecida pelo professor.
-
----
-
-### Passo 5 — Execute o projeto
-
-Você tem duas opções. **Recomendamos a Opção A para a primeira execução.**
-
-#### Opção A: Tudo com Docker (mais simples)
-
-Um único comando sobe o banco, a aplicação e o Adminer (interface web do banco):
-
-```bash
-docker compose -f docker/docker-compose.dev.yml up --build
-```
-
-Aguarde as mensagens de inicialização. Quando aparecer algo como:
-```
-Started CirurgiasApplication in X.XXX seconds
-```
-...a aplicação está pronta.
-
-#### Opção B: Banco no Docker + aplicação local (recomendado para desenvolvimento)
-
-Esta opção permite editar o código e ver as mudanças mais rápido:
-
-```bash
-# Terminal 1 — sobe o banco de dados
-docker compose -f docker/docker-compose.dev.yml up postgres adminer
-
-# Terminal 2 — roda a aplicação (em outro terminal, na mesma pasta)
-mvn spring-boot:run
-```
-
----
-
-### Passo 6 — Acesse no browser
-
-| O que | Endereço |
-|-------|----------|
-| Aplicação | http://localhost:8080 |
-| Login | usuário: `admin` / senha: `admin123` |
-| Adminer (banco) | http://localhost:8888 |
-| Health check | http://localhost:8080/actuator/health |
-
----
-
-### Parando o projeto
-
-```bash
-# Parar a aplicação: Ctrl+C no terminal onde está rodando
-
-# Parar os containers Docker:
-docker compose -f docker/docker-compose.dev.yml down
-```
-
----
-
-## Solução de Problemas Comuns
-
-### "Port 8080 already in use"
-Outra aplicação está usando a porta 8080. Para liberar:
-```bash
-# macOS / Linux
-lsof -ti:8080 | xargs kill
-
-# Windows (PowerShell)
-netstat -ano | findstr :8080
-# Anote o PID da última coluna e execute:
-taskkill /PID <número-do-pid> /F
-```
-
-### "Cannot connect to the Docker daemon"
-O Docker Desktop não está em execução. Abra o aplicativo Docker Desktop e aguarde inicializar.
-
-### "Connection refused" ao banco de dados
-O container do PostgreSQL ainda não subiu. Aguarde alguns segundos e tente novamente. Você pode verificar com:
-```bash
-docker compose -f docker/docker-compose.dev.yml ps
-# O container "cirurgias-postgres-dev" deve estar com status "healthy"
-```
-
-### Erro de compilação Java
-Verifique se o Java 21 está sendo usado pelo Maven:
-```bash
-mvn -version
-# A linha "Java version:" deve mostrar 21.x.x
-```
-Se mostrar outra versão, configure a variável `JAVA_HOME` apontando para o Java 21.
-
-### Flyway: "Found non-empty schema(s) with no schema history table"
-O banco existe mas foi criado sem as migrations. Apague os dados e recomece:
-```bash
-docker compose -f docker/docker-compose.dev.yml down -v
-docker compose -f docker/docker-compose.dev.yml up postgres
-```
-
----
-
-## Testes
-
-```bash
-# Rodar todos os testes (requer Docker em execução — usa Testcontainers)
-mvn test
-
-# Rodar com relatório de cobertura (JaCoCo)
-mvn verify
-# Relatório: abra o arquivo target/site/jacoco/index.html no browser
-```
-
----
-
-## Análise de Segurança (SAST)
-
-```bash
-# SpotBugs + FindSecBugs + OWASP Dependency Check
-mvn verify -Psecurity
-
-# Trivy: scan de vulnerabilidades no filesystem
-docker compose -f docker/docker-compose.dev.yml --profile scan up trivy
-
-# Verificar dependências desatualizadas
-mvn versions:display-dependency-updates -Pversions
-```
-
-Veja `docs/SECURITY.md` para detalhes.
-
----
-
-## Configurando o Deploy Automático (GitHub Actions)
-
-O projeto inclui um pipeline de CI/CD em `.github/workflows/deploy.yml` que:
-- roda os testes automaticamente a cada `push` na branch `main`
-- executa análise de segurança (SAST) no código e nas dependências
-- constrói a imagem Docker de produção e faz o deploy no servidor da disciplina
-
-Para ativar o deploy, você precisa configurar **dois secrets** e uma **variável** no seu repositório GitHub.
-
----
-
-### Secret 1 — Chave SSH de deploy (`SSH_DEPLOY_KEY`)
-
-O servidor da disciplina (`dsc.rodrigor.com`) já está preparado para receber deploys.
-A chave SSH que autoriza o acesso está disponível na página da disciplina:
-
-**Acesse: https://gd.dsc.rodrigor.com** e copie a chave SSH privada disponibilizada pelo professor.
-
-Depois, adicione no seu repositório:
-
-1. No GitHub, acesse seu repositório → **Settings**
-2. No menu lateral: **Secrets and variables → Actions**
-3. Clique em **New repository secret**
-4. Nome: `SSH_DEPLOY_KEY`
-5. Valor: cole a chave privada copiada do portal (o texto completo, incluindo as linhas `-----BEGIN...` e `-----END...`)
-6. Clique em **Add secret**
-
----
-
-### Secret 2 — Chave da API do NVD (`NVD_API_KEY`)
-
-#### O que é o NVD?
-
-**NVD** significa *National Vulnerability Database* — é o banco de dados oficial do governo americano (NIST) que cataloga todas as vulnerabilidades de segurança conhecidas em softwares. Cada vulnerabilidade recebe um identificador chamado **CVE** (ex.: CVE-2024-12345) e uma nota de gravidade chamada **CVSS** (de 0 a 10).
-
-O **OWASP Dependency Check** (uma das ferramentas de segurança do projeto) consulta esse banco para verificar se as bibliotecas que o seu projeto usa possuem vulnerabilidades conhecidas.
-
-#### Por que preciso de uma chave?
-
-Sem a chave, o download do banco de dados NVD é muito lento (pode levar 20+ minutos no CI/CD, ou até falhar por timeout). Com a chave gratuita, o download é feito via API e leva menos de 2 minutos.
-
-#### Como obter (gratuito, leva ~1 minuto)
-
-1. Acesse https://nvd.nist.gov/developers/request-an-api-key
-2. Preencha seu e-mail institucional (use o e-mail da UFPB se possível)
-3. Marque a caixa de uso não-comercial
-4. Clique em **Submit**
-5. Acesse seu e-mail — você receberá a chave em segundos
-
-#### Adicionando ao repositório
-
-1. No GitHub: **Settings → Secrets and variables → Actions**
-2. Clique em **New repository secret**
-3. Nome: `NVD_API_KEY`
-4. Valor: cole a chave recebida por e-mail
-5. Clique em **Add secret**
-
-> **Sem a chave ainda?** O pipeline funciona mesmo sem ela, mas o OWASP Dependency Check
-> pode demorar muito ou falhar por timeout. Configure assim que possível.
-
----
-
-### Variável — Nome da imagem Docker (`APP_IMAGE`)
-
-O pipeline publica a imagem Docker no GitHub Container Registry (GHCR) com o nome do seu repositório. Você não precisa configurar isso manualmente — o workflow usa `${{ github.repository }}` para montar o nome automaticamente.
-
-Mas o arquivo `.env` no servidor precisa saber qual imagem usar. O script de deploy atualiza isso automaticamente na primeira execução.
-
----
-
-### Verificando se o deploy funcionou
-
-Após configurar os secrets e fazer um `push` na branch `main`:
-
-1. No GitHub, clique na aba **Actions**
-2. Você verá o workflow **"Build & Deploy"** em execução
-3. Ele tem 3 etapas: **Testes e SAST → Build e push → Deploy em produção**
-4. Se tudo der certo, a aplicação estará disponível em `https://dsc.rodrigor.com`
-
-Se alguma etapa falhar, clique nela para ver os logs detalhados.
-
----
-
-## Estrutura do Projeto
-
-```
-base_projeto/
-├── .github/workflows/
-│   └── deploy.yml           # Pipeline CI/CD (GitHub Actions)
-├── src/main/java/br/ufpb/dsc/cirurgias/
-│   ├── config/              # Configurações (Security, GlobalModelAttributes, etc.)
-│   ├── controller/          # Controllers HTTP + HTMX
-│   ├── domain/              # Entidades JPA
-│   ├── dto/                 # Data Transfer Objects (Records)
-│   ├── exception/           # Exceções de domínio
-│   ├── repository/          # Interfaces Spring Data JPA
-│   └── service/             # Lógica de negócio
-├── src/main/resources/
-│   ├── db/migration/        # Scripts Flyway (V1__, V2__, ...)
-│   └── templates/           # Templates Thymeleaf
-├── docker/                  # Dockerfiles + docker-compose
-├── docs/                    # Documentação técnica
-├── CLAUDE.md                # Memória para Claude Code
-└── pom.xml
-```
-
----
-
-## Para Alunos: Adaptando o Boilerplate
-
-1. **Renomear** a entidade `Produto` para sua entidade principal
-2. **Criar migration** Flyway com a nova estrutura da tabela (`src/main/resources/db/migration/V2__...sql`)
-3. **Atualizar** Repository, Service, Controller e templates seguindo os mesmos padrões
-4. **Manter** a estrutura de pacotes e convenções (ver `docs/CONVENTIONS.md`)
-5. **Nunca editar** migrations já aplicadas — sempre criar uma nova (`V3__`, `V4__`, ...)
-
-> Dúvidas? Consulte a documentação em `docs/` ou o professor.
+O Docker irá compilar a imagem única do projeto e iniciar o servidor.
+
+### 4. Acessando a Aplicação
+Acesse a interface no seu navegador através de:
+👉 **[http://localhost:8000](http://localhost:8000)**
+*(Se o localhost falhar devido a cache no Windows, tente [http://127.0.0.1:8000](http://127.0.0.1:8000))*
+
+1. Faça seu Cadastro clicando em "Cadastre-se".
+2. Faça o Login com seu E-mail e CPF.
+3. O assistente de Chat carregará automaticamente, lhe chamando pelo nome e pronto para registrar seus gastos!
