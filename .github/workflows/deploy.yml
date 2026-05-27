@@ -107,6 +107,14 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
+      - name: Criar diretorio no servidor
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: dsc.rodrigor.com
+          username: ghactions
+          key: ${{ secrets.SSH_DEPLOY_KEY }}
+          script: mkdir -p /home/ghactions/financia
+
       - name: Copiar docker-compose.yml para o servidor
         uses: appleboy/scp-action@v0.1.7
         with:
