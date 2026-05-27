@@ -113,7 +113,8 @@ jobs:
           host: dsc.rodrigor.com
           username: ghactions
           key: ${{ secrets.SSH_DEPLOY_KEY }}
-          script: mkdir -p /home/ghactions/financia
+          envs_path: /tmp/.env_deploy
+          script: mkdir -p ~/financia
 
       - name: Copiar docker-compose.yml para o servidor
         uses: appleboy/scp-action@v0.1.7
@@ -122,7 +123,7 @@ jobs:
           username: ghactions
           key: ${{ secrets.SSH_DEPLOY_KEY }}
           source: docker-compose.yml
-          target: /home/ghactions/financia/
+          target: ~/financia/
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -135,11 +136,12 @@ jobs:
           username: ghactions
           key: ${{ secrets.SSH_DEPLOY_KEY }}
           envs: GHCR_TOKEN,GHCR_USER,IMAGE_FULL
+          envs_path: /tmp/.env_deploy
           script_stop: true
           script: |
             set -euo pipefail
 
-            DEPLOY_DIR="/home/ghactions/financia"
+            DEPLOY_DIR=~/financia
             COMPOSE_FILE="$DEPLOY_DIR/docker-compose.yml"
 
             echo "======================================================"
