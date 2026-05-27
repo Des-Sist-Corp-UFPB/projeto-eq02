@@ -2,11 +2,12 @@ version: '3.8'
 
 services:
   api:
+    image: ${APP_IMAGE:-financia-api:latest}
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8102:8000"
     env_file:
       - .env
     networks:
