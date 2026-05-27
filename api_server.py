@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, JSONResponse
-from tools.db import supabase
+from tools.db import execute_query, execute_insert
 from chainlit.utils import mount_chainlit
 app = FastAPI(title="FinancIA's API")
 
@@ -33,8 +33,8 @@ def root():
 
 @app.post("/login")
 def login(req: LoginRequest, response: Response):
-    res = supabase.table("clients").select("*").eq("cpf", req.cpf).eq("email", req.email).execute()
-    if not res.data:
+    clients = execute_query("SELECT * FROM clients WHERE cpf = %s AND email = %s", (req.cpf, req.email))
+    if not clients:
         raise HTTPException(status_code=401, detail="CPF ou E-mail inválidos.")
     
     # Prepara o JSON e seta o Cookie para o Chainlit poder ler
@@ -51,20 +51,16 @@ def login(req: LoginRequest, response: Response):
 
 @app.post("/register")
 def register(req: RegisterRequest):
-    res_cpf = supabase.table("clients").select("id").eq("cpf", req.cpf).execute()
-    if res_cpf.data:
+    existing = execute_query("SELECT id FROM clients WHERE cpf = %s", (req.cpf,))
+    if existing:
         raise HTTPException(status_code=400, detail="CPF já cadastrado.")
         
-    data = {
-        "nome": req.nome,
-        "cpf": req.cpf,
-        "email": req.email,
-        "renda_total": 0.00
-    }
-    res = supabase.table("clients").insert(data).execute()
-    if not res.data:
+    sql = """INSERT INTO clients (nome, cpf, email, renda_total) 
+             VALUES (%s, %s, %s, %s) RETURNING *"""
+    new_client = execute_insert(sql, (req.nome, req.cpf, req.email, 0.00))
+    if not new_client:
         raise HTTPException(status_code=500, detail="Erro ao criar cliente.")
-    return {"success": True, "client": res.data[0]}
+    return {"success": True, "client": new_client[0]}
 
 # Monta o App do Chainlit na rota /chat
 mount_chainlit(app=app, target="chat_app.py", path="/chat")

@@ -1,6 +1,6 @@
 # pyrefly: ignore [missing-import]
 from fastmcp import FastMCP
-from tools.db import supabase
+from tools.db import execute_query, execute_insert
 from tools.clients import _get_client_internal
 
 mcp = FastMCP("goals")
@@ -12,16 +12,10 @@ def set_goal(cpf: str, category: str, limit_amount: float, month_year: str) -> d
     if not client:
         return {"error": f"Cliente com CPF {cpf} não encontrado."}
     
-    data = {
-        "client_id": client["id"],
-        "category": category,
-        "limit_amount": limit_amount,
-        "month_year": month_year
-    }
-    response = supabase.table("goals").insert(data).execute()
-    if response.data:
-        return response.data[0]
-    return {}
+    sql = """INSERT INTO goals (client_id, category, limit_amount, month_year) 
+             VALUES (%s, %s, %s, %s) RETURNING *"""
+    res = execute_insert(sql, (client["id"], category, limit_amount, month_year))
+    return res[0] if res else {}
 
 @mcp.tool()
 def check_goal_status(cpf: str) -> list:
@@ -29,5 +23,4 @@ def check_goal_status(cpf: str) -> list:
     client = _get_client_internal(cpf)
     if not client:
         return []
-    response = supabase.table("goals").select("*").eq("client_id", client["id"]).execute()
-    return response.data
+    return execute_query("SELECT * FROM goals WHERE client_id = %s", (client["id"],))

@@ -146,6 +146,20 @@ jobs:
             echo "✓ Imagem baixada: $IMAGE_FULL"
 
             cd "$DEPLOY_DIR"
+            
+            # Garante que as configurações do novo banco estejam no .env de produção
+            grep -q "^DB_HOST=" .env 2>/dev/null || echo "DB_HOST=postgres" >> .env
+            grep -q "^DB_PORT=" .env 2>/dev/null || echo "DB_PORT=5432" >> .env
+            grep -q "^DB_NAME=" .env 2>/dev/null || echo "DB_NAME=eq02" >> .env
+            grep -q "^DB_USER=" .env 2>/dev/null || echo "DB_USER=eq02" >> .env
+            
+            # Se a senha ainda não estiver configurada no .env ou estiver vazia, configura a correta
+            if ! grep -q "^DB_PASSWORD=" .env 2>/dev/null; then
+              echo "DB_PASSWORD=k972b3p4mwj6Myw9nhx3" >> .env
+            else
+              sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=k972b3p4mwj6Myw9nhx3|" .env
+            fi
+
             if grep -q "^APP_IMAGE=" .env 2>/dev/null; then
               sed -i "s|^APP_IMAGE=.*|APP_IMAGE=$IMAGE_FULL|" .env
             else

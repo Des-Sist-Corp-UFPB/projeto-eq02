@@ -1,6 +1,6 @@
 # pyrefly: ignore [missing-import]
 from fastmcp import FastMCP
-from tools.db import supabase
+from tools.db import execute_query, execute_insert
 from tools.clients import _get_client_internal
 
 mcp = FastMCP("memory")
@@ -12,14 +12,9 @@ def add_user_memory(cpf: str, fact: str) -> dict:
     if not client:
         return {"error": f"Cliente com CPF {cpf} não encontrado."}
     
-    data = {
-        "client_id": client["id"],
-        "fact": fact
-    }
-    response = supabase.table("user_memory").insert(data).execute()
-    if response.data:
-        return response.data[0]
-    return {}
+    sql = "INSERT INTO user_memory (client_id, fact) VALUES (%s, %s) RETURNING *"
+    res = execute_insert(sql, (client["id"], fact))
+    return res[0] if res else {}
 
 @mcp.tool()
 def get_user_context(cpf: str) -> list:
@@ -27,5 +22,5 @@ def get_user_context(cpf: str) -> list:
     client = _get_client_internal(cpf)
     if not client:
         return []
-    response = supabase.table("user_memory").select("fact").eq("client_id", client["id"]).execute()
-    return [item["fact"] for item in response.data]
+    res = execute_query("SELECT fact FROM user_memory WHERE client_id = %s", (client["id"],))
+    return [item["fact"] for item in res]

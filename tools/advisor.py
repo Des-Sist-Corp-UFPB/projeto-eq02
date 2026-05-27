@@ -3,7 +3,7 @@ from fastmcp import FastMCP
 from typing import Optional, Dict
 from datetime import datetime, timedelta
 from tools.clients import _get_client_internal
-from tools.db import supabase
+from tools.db import execute_query
 
 mcp = FastMCP("advisor")
 
@@ -26,14 +26,18 @@ def analisar_fluxo_caixa(cpf: str) -> dict:
     hoje = datetime.now()
     
     # Puxa todas as transações, pois compras de meses passados podem ter parcelas caindo neste mês
-    res = supabase.table("transactions").select("*").eq("client_id", client["id"]).execute()
+    res = execute_query("SELECT * FROM transactions WHERE client_id = %s", (client["id"],))
     
     total_gasto = 0.0
     gastos_por_categoria: Dict[str, float] = {}
     
-    if res.data:
-        for t in res.data:
-            t_date = datetime.strptime(t["transaction_date"], "%Y-%m-%d")
+    if res:
+        for t in res:
+            t_date_val = t["transaction_date"]
+            if isinstance(t_date_val, str):
+                t_date = datetime.strptime(t_date_val, "%Y-%m-%d")
+            else:
+                t_date = t_date_val
             installments = int(t.get("installments") or 1)
             amount = float(t["amount"])
             
