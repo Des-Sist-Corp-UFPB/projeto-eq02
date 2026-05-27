@@ -179,3 +179,4 @@ jobs:
             docker image prune -f > /dev/null
             echo "✓ Imagens antigas removidas"
             echo "======================================================"
+            
