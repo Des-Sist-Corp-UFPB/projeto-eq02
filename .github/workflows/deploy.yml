@@ -107,14 +107,15 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
+      - name: Configurar chave SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_DEPLOY_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H dsc.rodrigor.com >> ~/.ssh/known_hosts
+
       - name: Criar diretorio no servidor
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: dsc.rodrigor.com
-          username: ghactions
-          key: ${{ secrets.SSH_DEPLOY_KEY }}
-          envs_path: /tmp/.env_deploy
-          script: mkdir -p ~/financia
+        run: ssh -i ~/.ssh/id_rsa ghactions@dsc.rodrigor.com 'mkdir -p ~/financia'
 
       - name: Copiar docker-compose.yml para o servidor
         uses: appleboy/scp-action@v0.1.7
@@ -126,20 +127,17 @@ jobs:
           target: ~/financia/
 
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USER: ${{ github.actor }}
           IMAGE_FULL: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-        with:
-          host: dsc.rodrigor.com
-          username: ghactions
-          key: ${{ secrets.SSH_DEPLOY_KEY }}
-          envs: GHCR_TOKEN,GHCR_USER,IMAGE_FULL
-          envs_path: /tmp/.env_deploy
-          script_stop: true
-          script: |
+        run: |
+          ssh -i ~/.ssh/id_rsa ghactions@dsc.rodrigor.com "bash -s" "$GHCR_TOKEN" "$GHCR_USER" "$IMAGE_FULL" << 'EOF'
             set -euo pipefail
+            
+            GHCR_TOKEN="$1"
+            GHCR_USER="$2"
+            IMAGE_FULL="$3"
 
             DEPLOY_DIR=~/financia
             COMPOSE_FILE="$DEPLOY_DIR/docker-compose.yml"
@@ -203,4 +201,5 @@ jobs:
             docker image prune -f > /dev/null
             echo "✓ Imagens antigas removidas"
             echo "======================================================"
+          EOF
             
