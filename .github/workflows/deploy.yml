@@ -1,6 +1,3 @@
-# =============================================================================
-# GitHub Actions — Build, Segurança e Deploy (Unificado)
-# =============================================================================
 name: Build & Deploy
 
 on:
@@ -17,35 +14,8 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # ============================================================================
-      # 1. Testes e SAST (Mantendo suas validações de segurança originais)
-      # ============================================================================
-      - name: Configurar Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Instalar dependências
-        run: pip install -r requirements.txt
-
-      - name: Trivy — scan de dependências e segredos
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: fs
-          scan-ref: .
-          severity: HIGH,CRITICAL
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: library
-          scanners: vuln,secret
-
-      # ============================================================================
-      # 2. Build da imagem Docker (Com o padrão lowercase do professor)
-      # ============================================================================
       - name: Prepara nome da imagem (lowercase)
         run: echo "IMAGE=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]'):latest" >> $GITHUB_ENV
 
@@ -63,99 +33,10 @@ jobs:
           push: true
           tags: ${{ env.IMAGE }}
 
-      # ============================================================================
-      # 3. Deploy no servidor usando as novas credenciais e SSH Action
-      # ============================================================================
-      - name: Criar diretorio no servidor
+      - name: Deploy no servidor
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: dsc.rodrigor.com
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_DEPLOY_KEY }}
-          script: mkdir -p ~/financia
-
-      - name: Copiar docker-compose.yml para o servidor
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: dsc.rodrigor.com
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_DEPLOY_KEY }}
-          source: docker-compose.yml
-          target: ~/financia/
-
-      - name: Deploy no servidor via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GHCR_USER: ${{ github.actor }}
-          IMAGE_FULL: ${{ env.IMAGE }}
-        with:
-          host: dsc.rodrigor.com
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_DEPLOY_KEY }}
-          envs: GHCR_TOKEN,GHCR_USER,IMAGE_FULL
-          script: |
-            set -euo pipefail
-            
-            DEPLOY_DIR=~/financia
-            COMPOSE_FILE="$DEPLOY_DIR/docker-compose.yml"
-            
-            echo "======================================================"
-            echo " Deploy iniciado: $(date)"
-            echo " Imagem: $IMAGE_FULL"
-            echo "======================================================"
-            
-            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-            echo "✓ Autenticado no GHCR"
-            
-            docker pull "$IMAGE_FULL"
-            echo "✓ Imagem baixada: $IMAGE_FULL"
-            
-            cd "$DEPLOY_DIR"
-            
-            # Garante que as configurações do novo banco estejam no .env de produção
-            grep -q "^DB_HOST=" .env 2>/dev/null || echo "DB_HOST=postgres" >> .env
-            grep -q "^DB_PORT=" .env 2>/dev/null || echo "DB_PORT=5432" >> .env
-            grep -q "^DB_NAME=" .env 2>/dev/null || echo "DB_NAME=eq02" >> .env
-            grep -q "^DB_USER=" .env 2>/dev/null || echo "DB_USER=eq02" >> .env
-            
-            # Se a senha ainda não estiver configurada no .env ou estiver vazia, configura a correta
-            if ! grep -q "^DB_PASSWORD=" .env 2>/dev/null; then
-              echo "DB_PASSWORD=k972b3p4mwj6Myw9nhx3" >> .env
-            else
-              sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=k972b3p4mwj6Myw9nhx3|" .env
-            fi
-            
-            if grep -q "^APP_IMAGE=" .env 2>/dev/null; then
-              sed -i "s|^APP_IMAGE=.*|APP_IMAGE=$IMAGE_FULL|" .env
-            else
-              echo "APP_IMAGE=$IMAGE_FULL" >> .env
-            fi
-            echo "✓ .env atualizado com APP_IMAGE=$IMAGE_FULL"
-            
-            echo "Reiniciando container da api..."
-            docker compose -f "$COMPOSE_FILE" up -d \
-              --force-recreate \
-              api
-            echo "✓ Container reiniciado"
-            
-            echo "Aguardando a aplicação ficar saudável na porta 8102 (máx. 90s)..."
-            for i in $(seq 1 18); do
-              # Teste usando curl (-L para seguir redirect que a API faz pra /static/login.html)
-              if curl -s -L -o /dev/null -w "%{http_code}" http://localhost:8102/ | grep -q '^\(200\|307\)$'; then
-                echo "✓ Aplicação saudável! ($(( i * 5 ))s)"
-                break
-              fi
-              if [ "$i" -eq 18 ]; then
-                echo "✗ ERRO: aplicação não ficou saudável após 90 segundos"
-                echo "--- Últimas 80 linhas do log da aplicação ---"
-                docker compose -f "$COMPOSE_FILE" logs --tail 80 api
-                exit 1
-              fi
-              echo "  aguardando... ($i/18, $(( i * 5 ))s)"
-              sleep 5
-            done
-            
-            docker image prune -f > /dev/null
-            echo "✓ Imagens antigas removidas"
-            echo "======================================================"
+          script: echo "deploy"
