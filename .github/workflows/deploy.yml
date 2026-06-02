@@ -33,6 +33,23 @@ jobs:
           push: true
           tags: ${{ env.IMAGE }}
 
+      # ============================================================================
+      # Passo corretivo temporário para consertar o arquivo .env no servidor do professor
+      # ============================================================================
+      - name: Configurar chave SSH nativa temporária
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_DEPLOY_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H dsc.rodrigor.com >> ~/.ssh/known_hosts
+
+      - name: Corrigir CONFIGURAR no servidor do professor
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@dsc.rodrigor.com "bash --norc --noprofile -c 'sed -i \"s/CONFIGURAR/des-sist-corp-ufpb/gI\" /opt/eq02/.env ~/.bashrc ~/.profile 2>/dev/null || true'"
+
+      # ============================================================================
+      # Passo de deploy original do professor
+      # ============================================================================
       - name: Deploy no servidor
         uses: appleboy/ssh-action@v1.0.3
         with:
