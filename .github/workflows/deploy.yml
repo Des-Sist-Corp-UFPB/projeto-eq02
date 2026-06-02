@@ -1,5 +1,5 @@
 # =============================================================================
-# GitHub Actions — Build, Segurança e Deploy
+# GitHub Actions — Build, Segurança e Deploy (Unificado)
 # =============================================================================
 name: Build & Deploy
 
@@ -8,23 +8,21 @@ on:
     branches: [main]
   workflow_dispatch:
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
-
-  # ============================================================================
-  # JOB 1 — Análise de segurança (SAST e dependências)
-  # ============================================================================
-  test-and-sast:
-    name: Testes e SAST
+  build-and-deploy:
+    name: Build, push e deploy
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
 
+      # ============================================================================
+      # 1. Testes e SAST (Mantendo suas validações de segurança originais)
+      # ============================================================================
       - name: Configurar Python 3.11
         uses: actions/setup-python@v5
         with:
@@ -45,114 +43,74 @@ jobs:
           vuln-type: library
           scanners: vuln,secret
 
-  # ============================================================================
-  # JOB 2 — Build da imagem Docker de produção e push para GHCR
-  # ============================================================================
-  build-and-push:
-    name: Build e push da imagem
-    runs-on: ubuntu-latest
-    needs: test-and-sast
+      # ============================================================================
+      # 2. Build da imagem Docker (Com o padrão lowercase do professor)
+      # ============================================================================
+      - name: Prepara nome da imagem (lowercase)
+        run: echo "IMAGE=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]'):latest" >> $GITHUB_ENV
 
-    permissions:
-      contents: read
-      packages: write
-
-    outputs:
-      image-tags: ${{ steps.meta.outputs.tags }}
-
-    steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
-
-      - name: Extrair metadados para Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=sha,format=long
-            type=raw,value=latest
-
-      - name: Login no GHCR
+      - name: Login no GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Configurar Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build e push para o GHCR
+      - name: Build e push da imagem
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ env.IMAGE }}
 
-  # ============================================================================
-  # JOB 3 — Deploy no servidor via SSH
-  # ============================================================================
-  deploy:
-    name: Deploy em produção
-    runs-on: ubuntu-latest
-    needs: build-and-push
-    environment: production
-
-    steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
-
-      - name: Configurar chave SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_DEPLOY_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H dsc.rodrigor.com >> ~/.ssh/known_hosts
-
+      # ============================================================================
+      # 3. Deploy no servidor usando as novas credenciais e SSH Action
+      # ============================================================================
       - name: Criar diretorio no servidor
-        run: ssh -i ~/.ssh/id_rsa ghactions@dsc.rodrigor.com 'mkdir -p ~/financia'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: dsc.rodrigor.com
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_DEPLOY_KEY }}
+          script: mkdir -p ~/financia
 
       - name: Copiar docker-compose.yml para o servidor
         uses: appleboy/scp-action@v0.1.7
         with:
           host: dsc.rodrigor.com
-          username: ghactions
+          username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_DEPLOY_KEY }}
           source: docker-compose.yml
           target: ~/financia/
 
-      - name: Deploy via SSH
+      - name: Deploy no servidor via SSH
+        uses: appleboy/ssh-action@v1.0.3
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USER: ${{ github.actor }}
-          IMAGE_FULL: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-        run: |
-          ssh -i ~/.ssh/id_rsa ghactions@dsc.rodrigor.com "bash -s" "$GHCR_TOKEN" "$GHCR_USER" "$IMAGE_FULL" << 'EOF'
+          IMAGE_FULL: ${{ env.IMAGE }}
+        with:
+          host: dsc.rodrigor.com
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_DEPLOY_KEY }}
+          envs: GHCR_TOKEN,GHCR_USER,IMAGE_FULL
+          script: |
             set -euo pipefail
             
-            GHCR_TOKEN="$1"
-            GHCR_USER="$2"
-            IMAGE_FULL="$3"
-
             DEPLOY_DIR=~/financia
             COMPOSE_FILE="$DEPLOY_DIR/docker-compose.yml"
-
+            
             echo "======================================================"
             echo " Deploy iniciado: $(date)"
             echo " Imagem: $IMAGE_FULL"
             echo "======================================================"
-
+            
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             echo "✓ Autenticado no GHCR"
-
+            
             docker pull "$IMAGE_FULL"
             echo "✓ Imagem baixada: $IMAGE_FULL"
-
+            
             cd "$DEPLOY_DIR"
             
             # Garante que as configurações do novo banco estejam no .env de produção
@@ -167,20 +125,20 @@ jobs:
             else
               sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=k972b3p4mwj6Myw9nhx3|" .env
             fi
-
+            
             if grep -q "^APP_IMAGE=" .env 2>/dev/null; then
               sed -i "s|^APP_IMAGE=.*|APP_IMAGE=$IMAGE_FULL|" .env
             else
               echo "APP_IMAGE=$IMAGE_FULL" >> .env
             fi
             echo "✓ .env atualizado com APP_IMAGE=$IMAGE_FULL"
-
+            
             echo "Reiniciando container da api..."
             docker compose -f "$COMPOSE_FILE" up -d \
               --force-recreate \
               api
             echo "✓ Container reiniciado"
-
+            
             echo "Aguardando a aplicação ficar saudável na porta 8102 (máx. 90s)..."
             for i in $(seq 1 18); do
               # Teste usando curl (-L para seguir redirect que a API faz pra /static/login.html)
@@ -197,9 +155,7 @@ jobs:
               echo "  aguardando... ($i/18, $(( i * 5 ))s)"
               sleep 5
             done
-
+            
             docker image prune -f > /dev/null
             echo "✓ Imagens antigas removidas"
             echo "======================================================"
-          EOF
-            
