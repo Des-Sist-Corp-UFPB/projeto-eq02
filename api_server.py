@@ -5,6 +5,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, JSONResponse
 from tools.db import execute_query, execute_insert
 from chainlit.utils import mount_chainlit
+from datetime import datetime, timezone
+
 app = FastAPI(title="FinancIA's API")
 
 app.add_middleware(
@@ -30,6 +32,14 @@ class RegisterRequest(BaseModel):
 @app.get("/")
 def root():
     return RedirectResponse(url="/static/login.html")
+
+@app.get("/ping")
+def ping():
+    return {
+        "status": "ok",
+        "service": "eq02",
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    }
 
 @app.post("/login")
 def login(req: LoginRequest, response: Response):
