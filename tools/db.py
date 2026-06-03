@@ -1,19 +1,33 @@
 import os
 import psycopg2
+from psycopg2.pool import ThreadedConnectionPool
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 
 load_dotenv()
 
+_pool = None
+
+def get_pool():
+    global _pool
+    if _pool is None:
+        _pool = ThreadedConnectionPool(
+            1, 20,
+            host=os.environ.get("DB_HOST"),
+            port=os.environ.get("DB_PORT"),
+            dbname=os.environ.get("DB_NAME"),
+            user=os.environ.get("DB_USER"),
+            password=os.environ.get("DB_PASSWORD"),
+            cursor_factory=RealDictCursor
+        )
+    return _pool
+
 def get_db_connection():
-    return psycopg2.connect(
-        host=os.environ.get("DB_HOST"),
-        port=os.environ.get("DB_PORT"),
-        dbname=os.environ.get("DB_NAME"),
-        user=os.environ.get("DB_USER"),
-        password=os.environ.get("DB_PASSWORD"),
-        cursor_factory=RealDictCursor
-    )
+    return get_pool().getconn()
+
+def release_db_connection(conn):
+    if _pool and conn:
+        _pool.putconn(conn)
 
 def execute_query(sql: str, params: tuple = None, fetch: bool = True, fetch_one: bool = False):
     """
@@ -41,7 +55,7 @@ def execute_query(sql: str, params: tuple = None, fetch: bool = True, fetch_one:
         return []
     finally:
         if conn:
-            conn.close()
+            release_db_connection(conn)
 
 def execute_insert(sql: str, params: tuple = None):
     """
