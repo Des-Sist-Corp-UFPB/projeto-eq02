@@ -112,4 +112,3 @@ cython_debug/
 .vscode/
 
 # Custom project ignores
-.chainlit/
