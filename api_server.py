@@ -6,6 +6,7 @@ from fastapi.responses import RedirectResponse, JSONResponse
 from tools.db import execute_query, execute_insert
 from chainlit.utils import mount_chainlit
 from datetime import datetime, timezone
+import os
 
 app = FastAPI(title="FinancIA's API")
 
@@ -19,6 +20,15 @@ app.add_middleware(
 
 # Monta a pasta static para servir os HTMLs de Login
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.on_event("startup")
+def startup_event():
+    # Inicializa as tabelas do banco de dados se não existirem
+    schema_path = os.path.join(os.path.dirname(__file__), "sql", "01_init_schema.sql")
+    if os.path.exists(schema_path):
+        with open(schema_path, "r", encoding="utf-8") as f:
+            sql_script = f.read()
+        execute_query(sql_script, fetch=False)
 
 class LoginRequest(BaseModel):
     cpf: str
