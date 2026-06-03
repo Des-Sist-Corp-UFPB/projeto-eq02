@@ -40,14 +40,15 @@ def execute_query(sql: str, params: tuple = None, fetch: bool = True, fetch_one:
         conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute(sql, params)
+            result = []
             if fetch:
                 if fetch_one:
                     res = cur.fetchone()
-                    return [res] if res else [] # Mantém formato de lista similar ao data do supabase
-                res = cur.fetchall()
-                return res
+                    result = [res] if res else []
+                else:
+                    result = cur.fetchall()
             conn.commit()
-            return []
+            return result
     except Exception as e:
         if conn:
             conn.rollback()
