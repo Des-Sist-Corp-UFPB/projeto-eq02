@@ -23,12 +23,26 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.on_event("startup")
 def startup_event():
-    # Inicializa as tabelas do banco de dados se não existirem
+    print("--- INICIANDO SETUP DO BANCO DE DADOS ---", flush=True)
     schema_path = os.path.join(os.path.dirname(__file__), "sql", "01_init_schema.sql")
+    print(f"Caminho do script: {schema_path}", flush=True)
     if os.path.exists(schema_path):
+        print("Arquivo encontrado! Rodando script...", flush=True)
         with open(schema_path, "r", encoding="utf-8") as f:
             sql_script = f.read()
-        execute_query(sql_script, fetch=False)
+        
+        # Vamos dividir o script por ';' e rodar comando por comando
+        # Isso evita que um erro (como CREATE EXTENSION sem permissão) aborte a criação das tabelas
+        commands = sql_script.split(';')
+        for cmd in commands:
+            cmd = cmd.strip()
+            if cmd:
+                print(f"Rodando: {cmd[:50]}...", flush=True)
+                execute_query(cmd, fetch=False)
+        print("--- SETUP DO BANCO FINALIZADO ---", flush=True)
+    else:
+        print("ERRO: Arquivo sql/01_init_schema.sql NAO ENCONTRADO!", flush=True)
+        print(f"Arquivos na pasta atual: {os.listdir(os.path.dirname(__file__))}", flush=True)
 
 class LoginRequest(BaseModel):
     cpf: str
