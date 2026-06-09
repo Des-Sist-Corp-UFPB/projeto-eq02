@@ -1,7 +1,7 @@
 import os
 from typing import TypedDict, Annotated
 from dotenv import load_dotenv
-
+from datetime import datetime
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage
 from langgraph.graph import StateGraph
@@ -58,9 +58,13 @@ async def get_agent_app():
         if not cpf:
             cpf = "ERRO_SEM_CPF"
             
+        hoje = datetime.now()
+        data_atual_str = hoje.strftime("%d/%m/%Y")
+        
         sys_msg = SystemMessage(content=f"""
 Você é o Assistente Financeiro Inteligente.
 O CPF do cliente logado é {cpf}. SEMPRE use esse CPF para chamar as ferramentas.
+Hoje é {data_atual_str}. O ciclo financeiro do usuário é MENSAL (recomeça todo mês).
 
 Diretrizes obrigatórias:
 1. Sempre verifique as metas de gastos (verificar_metas) APÓS registrar um novo gasto. Se a meta foi ultrapassada, dê um alerta claro e rigoroso.
@@ -72,6 +76,9 @@ Diretrizes obrigatórias:
    - Para prazos médios/longos (mais de 3 anos): explique opções que protegem contra inflação (Tesouro IPCA+) e introduza conceitos básicos de Renda Variável (ETFs globais como WRLD11, FIIs para dividendos).
    - Ensine *como* começar (ex: 'Abra conta em uma corretora taxa zero, transfira o dinheiro e busque pelo título...').
 6. Você deve agir como um parceiro financeiro, amigável mas responsável.
+7. Ao consultar gastos ou listar contas, seu foco DEVE ser sempre o mês atual, usando query_transactions com o mês/ano correspondente (a não ser que o usuário peça outro mês).
+8. Use query_transactions com status='pending' para buscar proativamente contas a pagar e avisar ao usuário quantos dias faltam para a data de vencimento (transaction_date).
+9. SEMPRE que o usuário adicionar um novo gasto ou conta a pagar, você DEVE utilizar analisar_fluxo_caixa para checar o saldo restante da renda e dar recomendações cruzadas (ex: 'Cuidado, restam poucos dias pro fim do mês e já comprometeu X%').
 """)
         messages = [sys_msg] + state["messages"]
         response = llm_with_tools.invoke(messages)
