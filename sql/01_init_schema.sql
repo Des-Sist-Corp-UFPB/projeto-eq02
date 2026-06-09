@@ -1,5 +1,5 @@
 -- Habilita a extensão pgvector para trabalhar com embeddings na busca semântica
-CREATE EXTENSION IF NOT EXISTS vector;
+-- CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Tabela de Clientes (Multi-tenancy por CPF)
 CREATE TABLE IF NOT EXISTS clients (
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     transaction_date DATE NOT NULL,
     status VARCHAR(20) DEFAULT 'paid', -- 'paid' (pago/gasto) ou 'pending' (conta a pagar)
     is_recurring BOOLEAN DEFAULT FALSE,
-    embedding vector(1536), -- 1536 é o tamanho padrão para embeddings da OpenAI (text-embedding-3-small)
+    -- embedding vector(1536), -- 1536 é o tamanho padrão para embeddings da OpenAI (text-embedding-3-small)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
