@@ -2,6 +2,7 @@ import os
 from typing import TypedDict, Annotated
 from dotenv import load_dotenv
 from datetime import datetime
+
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage
 from langgraph.graph import StateGraph
