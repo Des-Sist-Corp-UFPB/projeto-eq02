@@ -1,5 +1,35 @@
-.venv
-__pycache__
+.venv/
+venv/
+ENV/
+env/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
 *.pyc
+*.pyo
+*.pyd
+
+# Environment files / secrets
 .env
+.env.local
+*.pem
+*.key
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Build / packaging
+build/
+dist/
+.eggs/
+*.egg-info/
+
+# Docker / compose overrides
+docker-compose.override.yml
+
+# Local dev files
 scratch/
