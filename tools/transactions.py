@@ -81,3 +81,10 @@ def update_transaction(transaction_id: str, amount: float = None, category: str 
     
     res = execute_insert(sql, tuple(params))
     return res[0] if res else {"error": "Transação não encontrada ou falha ao atualizar."}
+
+@mcp.tool()
+def delete_transaction(transaction_id: str) -> dict:
+    """Exclui permanentemente uma transação ou conta a pagar do banco de dados pelo seu ID."""
+    sql = "DELETE FROM transactions WHERE id = %s RETURNING id"
+    res = execute_insert(sql, (transaction_id,))
+    return {"status": "success", "deleted_id": transaction_id} if res else {"error": "Falha ao excluir ou transação não encontrada."}

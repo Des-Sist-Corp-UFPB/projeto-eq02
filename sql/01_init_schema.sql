@@ -59,17 +59,7 @@ CREATE TABLE IF NOT EXISTS user_memory (
 -- --------------------------------------------------------
 
 INSERT INTO clients (cpf, nome, email, renda_total) VALUES
-('00011122233', 'João Heslin', 'joaoheslin1@gmail.com', 3500.00),
-('44455566677', 'Rita de Cássia', 'ritacassia2@gmail.com', 2000.00)
+('00011122233', 'João Heslin', 'joaoheslin1@gmail.com', 2000.00),
 ON CONFLICT (cpf) DO NOTHING;
 
 -- Mock Data para transações (contas pagas e pendentes do João)
-INSERT INTO transactions (client_id, amount, category, description, transaction_date, status, is_recurring)
-SELECT id, 150.00, 'Moradia', 'Conta de Luz', (CURRENT_DATE + INTERVAL '5 days'), 'pending', true
-FROM clients WHERE cpf = '00011122233'
-LIMIT 1;
-
-INSERT INTO transactions (client_id, amount, category, description, transaction_date, status, is_recurring)
-SELECT id, 60.00, 'Assinatura', 'Netflix', CURRENT_DATE, 'paid', true
-FROM clients WHERE cpf = '00011122233'
-LIMIT 1;
