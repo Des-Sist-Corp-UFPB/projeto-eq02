@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS transactions (
 );
 
 -- Garantir que as colunas existam caso a tabela já tenha sido criada antes
-ALTER TABLE transactions ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'paid';
-ALTER TABLE transactions ADD COLUMN IF NOT EXISTS is_recurring BOOLEAN DEFAULT FALSE;
+ALTER TABLE transactions ADD COLUMN status VARCHAR(20) DEFAULT 'paid';
+ALTER TABLE transactions ADD COLUMN is_recurring BOOLEAN DEFAULT FALSE;
 
 -- Tabela de Metas Mensais
 CREATE TABLE IF NOT EXISTS goals (
