@@ -20,9 +20,15 @@ CREATE TABLE IF NOT EXISTS transactions (
     category VARCHAR(100) NOT NULL,
     description TEXT NOT NULL,
     transaction_date DATE NOT NULL,
+    status VARCHAR(20) DEFAULT 'paid', -- 'paid' (pago/gasto) ou 'pending' (conta a pagar)
+    is_recurring BOOLEAN DEFAULT FALSE,
     embedding vector(1536), -- 1536 é o tamanho padrão para embeddings da OpenAI (text-embedding-3-small)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Garantir que as colunas existam caso a tabela já tenha sido criada antes
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'paid';
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS is_recurring BOOLEAN DEFAULT FALSE;
 
 -- Tabela de Metas Mensais
 CREATE TABLE IF NOT EXISTS goals (
@@ -56,3 +62,14 @@ INSERT INTO clients (cpf, nome, email, renda_total) VALUES
 ('00011122233', 'João Heslin', 'joaoheslin1@gmail.com', 3500.00),
 ('44455566677', 'Rita de Cássia', 'ritacassia2@gmail.com', 2000.00)
 ON CONFLICT (cpf) DO NOTHING;
+
+-- Mock Data para transações (contas pagas e pendentes do João)
+INSERT INTO transactions (client_id, amount, category, description, transaction_date, status, is_recurring)
+SELECT id, 150.00, 'Moradia', 'Conta de Luz', (CURRENT_DATE + INTERVAL '5 days'), 'pending', true
+FROM clients WHERE cpf = '00011122233'
+LIMIT 1;
+
+INSERT INTO transactions (client_id, amount, category, description, transaction_date, status, is_recurring)
+SELECT id, 60.00, 'Assinatura', 'Netflix', CURRENT_DATE, 'paid', true
+FROM clients WHERE cpf = '00011122233'
+LIMIT 1;
