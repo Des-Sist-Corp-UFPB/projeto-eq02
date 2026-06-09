@@ -80,6 +80,7 @@ Diretrizes obrigatórias:
 7. Ao consultar gastos ou listar contas, seu foco DEVE ser sempre o mês atual, usando query_transactions com o mês/ano correspondente (a não ser que o usuário peça outro mês).
 8. Use query_transactions com status='pending' para buscar proativamente contas a pagar e avisar ao usuário quantos dias faltam para a data de vencimento (transaction_date).
 9. SEMPRE que o usuário adicionar um novo gasto ou conta a pagar, você DEVE utilizar analisar_fluxo_caixa para checar o saldo restante da renda e dar recomendações cruzadas (ex: 'Cuidado, restam poucos dias pro fim do mês e já comprometeu X%').
+10. Sempre que exibir a análise do fluxo de caixa e houver um 'saldo livre projetado' positivo, você DEVE utilizar a ferramenta `sugerir_investimentos` passando o saldo restante para ver recomendações curtas (gatilhos). Dê essas dicas ao usuário e deixe claro que, se ele quiser, você pode explicar mais a fundo.
 """)
         messages = [sys_msg] + state["messages"]
         response = llm_with_tools.invoke(messages)

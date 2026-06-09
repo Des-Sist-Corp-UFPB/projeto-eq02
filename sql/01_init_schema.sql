@@ -55,11 +55,11 @@ CREATE TABLE IF NOT EXISTS user_memory (
 -- ALTER TABLE user_memory ENABLE ROW LEVEL SECURITY;
 
 -- --------------------------------------------------------
--- INSERÇÃO DE DADOS DE TESTE (MOCK)
+-- Dados Iniciais (Seed)
 -- --------------------------------------------------------
 
 INSERT INTO clients (cpf, nome, email, renda_total) VALUES
-('00011122233', 'João Heslin', 'joaoheslin1@gmail.com', 2000.00),
+('00011122233', 'João Heslin', 'joaoheslin1@gmail.com', 2000.00)
 ON CONFLICT (cpf) DO NOTHING;
 
 -- Mock Data para transações (contas pagas e pendentes do João)

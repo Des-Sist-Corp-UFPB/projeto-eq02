@@ -17,6 +17,36 @@ def simular_investimento(valor_mensal: float, meses: int, taxa_anual_porcentagem
     return {"montante_final": round(montante, 2), "total_investido": round(valor_mensal * meses, 2)}
 
 @mcp.tool()
+def sugerir_investimentos(saldo_livre: float) -> dict:
+    """Retorna opções de investimentos e rentabilidades baseadas no saldo livre informado."""
+    if saldo_livre <= 0:
+        return {"recomendacao": "No momento, o foco deve ser organizar as contas e sair do vermelho antes de investir."}
+    
+    if saldo_livre <= 500:
+        opcoes = [
+            {"tipo": "Tesouro Selic", "prazo": "Curto Prazo / Reserva", "rentabilidade_esperada": "~10.5% ao ano", "risco": "Baixíssimo"},
+            {"tipo": "CDB 100% CDI Liquidez Diária", "prazo": "Curto Prazo / Reserva", "rentabilidade_esperada": "~10.4% ao ano", "risco": "Baixo (Garantia FGC)"}
+        ]
+    elif saldo_livre <= 2000:
+        opcoes = [
+            {"tipo": "Tesouro IPCA+", "prazo": "Médio Prazo", "rentabilidade_esperada": "Inflação + ~6% ao ano", "risco": "Baixo"},
+            {"tipo": "CDBs Prefixados", "prazo": "Médio Prazo (1 a 3 anos)", "rentabilidade_esperada": "~11% a 12% ao ano", "risco": "Baixo"},
+            {"tipo": "FIIs (Fundos Imobiliários)", "prazo": "Longo Prazo / Renda Passiva", "rentabilidade_esperada": "Dividendos de ~0.8% a 1% ao mês", "risco": "Médio (Renda Variável)"}
+        ]
+    else:
+        opcoes = [
+            {"tipo": "Tesouro IPCA+", "prazo": "Longo Prazo / Aposentadoria", "rentabilidade_esperada": "Inflação + ~6% ao ano", "risco": "Baixo"},
+            {"tipo": "ETFs Globais (ex: WRLD11)", "prazo": "Longo Prazo", "rentabilidade_esperada": "Acompanha mercado global", "risco": "Alto (Renda Variável)"},
+            {"tipo": "Carteira de FIIs e Ações", "prazo": "Longo Prazo", "rentabilidade_esperada": "Dividendos mensais + Valorização", "risco": "Médio/Alto"}
+        ]
+        
+    return {
+        "analise": f"Com um saldo livre de R$ {saldo_livre:.2f}, você tem boas opções para rentabilizar seu dinheiro.",
+        "opcoes_sugeridas": opcoes,
+        "dica": "Lembre-se: antes de investir em renda variável ou opções presas, construa sua Reserva de Emergência (3 a 6 meses do seu custo de vida) com liquidez diária!"
+    }
+
+@mcp.tool()
 def analisar_fluxo_caixa(cpf: str) -> dict:
     """Analisa os gastos focando apenas nas parcelas ou despesas integrais que incidem no mês vigente."""
     client = _get_client_internal(cpf)
