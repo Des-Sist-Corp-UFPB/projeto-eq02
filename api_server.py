@@ -65,6 +65,23 @@ def ping():
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     }
 
+@app.get("/debug_db")
+def debug_db():
+    try:
+        # Puxa o nome das colunas
+        cols = execute_query("SELECT column_name FROM information_schema.columns WHERE table_name = 'transactions'")
+        col_names = [c["column_name"] for c in cols] if cols else []
+        
+        # Puxa todas as transações de teste para vermos se inseriu
+        trans = execute_query("SELECT id, description, status, transaction_date FROM transactions LIMIT 5")
+        
+        return {
+            "columns": col_names,
+            "sample_data": trans
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.post("/login")
 def login(req: LoginRequest, response: Response):
     clients = execute_query("SELECT * FROM clients WHERE cpf = %s AND email = %s", (req.cpf, req.email))

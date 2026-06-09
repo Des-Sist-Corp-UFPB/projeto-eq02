@@ -12,6 +12,9 @@ def add_transaction(cpf: str, amount: float, category: str, description: str, da
     if not client:
         return {"error": f"Cliente com CPF {cpf} não encontrado."}
     
+    if status.lower() == 'pendente': status = 'pending'
+    elif status.lower() == 'pago': status = 'paid'
+
     sql = """INSERT INTO transactions (client_id, amount, installments, category, description, transaction_date, status, is_recurring)
              VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING *"""
     res = execute_insert(sql, (client["id"], amount, installments, category, description, date, status, is_recurring))
@@ -34,6 +37,8 @@ def query_transactions(cpf: str, month: int = None, year: int = None, status: st
         sql += " AND EXTRACT(YEAR FROM transaction_date) = %s"
         params.append(year)
     if status:
+        if status.lower() == 'pendente': status = 'pending'
+        elif status.lower() == 'pago': status = 'paid'
         sql += " AND status = %s"
         params.append(status)
         
