@@ -29,6 +29,7 @@ def analisar_fluxo_caixa(cpf: str) -> dict:
     res = execute_query("SELECT * FROM transactions WHERE client_id = %s", (client["id"],))
     
     total_gasto = 0.0
+    total_pendente = 0.0
     gastos_por_categoria: Dict[str, float] = {}
     
     if res:
@@ -40,6 +41,7 @@ def analisar_fluxo_caixa(cpf: str) -> dict:
                 t_date = t_date_val
             installments = int(t.get("installments") or 1)
             amount = float(t["amount"])
+            status = t.get("status", "paid")
             
             # Calcula quantos meses se passaram desde a compra
             diff_months = (hoje.year - t_date.year) * 12 + (hoje.month - t_date.month)
@@ -47,8 +49,12 @@ def analisar_fluxo_caixa(cpf: str) -> dict:
             # Se a diferença de meses for maior ou igual a 0 e menor que o número de parcelas, a parcela incide neste mês
             if 0 <= diff_months < installments:
                 valor_parcela = amount / installments
-                total_gasto += valor_parcela
-                gastos_por_categoria[t["category"]] = gastos_por_categoria.get(t["category"], 0.0) + valor_parcela
+                
+                if status == 'pending':
+                    total_pendente += valor_parcela
+                else:
+                    total_gasto += valor_parcela
+                    gastos_por_categoria[t["category"]] = gastos_por_categoria.get(t["category"], 0.0) + valor_parcela
                 
     burn_rate = (total_gasto / renda * 100) if renda > 0 else 0.0
             
@@ -56,6 +62,8 @@ def analisar_fluxo_caixa(cpf: str) -> dict:
         "mes_analisado": hoje.strftime("%Y-%m"),
         "renda_mensal": renda,
         "total_gasto_mes_atual": round(total_gasto, 2),
+        "total_contas_pendentes": round(total_pendente, 2),
+        "saldo_livre_projetado": round(renda - total_gasto - total_pendente, 2),
         "burn_rate_porcentagem": round(burn_rate, 2),
         "gastos_por_categoria": {k: round(v, 2) for k, v in gastos_por_categoria.items()}
     }
