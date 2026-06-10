@@ -56,9 +56,11 @@ async function fetchAndUpdateDashboard() {
         const shouldShow = data.show_dashboard || isDashboardOnly;
         
         if (shouldShow) {
+            document.body.classList.add('show-dashboard');
             document.getElementById('welcome-msg').style.display = 'none';
             document.getElementById('dash-content').style.display = 'block';
         } else {
+            document.body.classList.remove('show-dashboard');
             document.getElementById('welcome-msg').style.display = 'flex';
             document.getElementById('dash-content').style.display = 'none';
         }
