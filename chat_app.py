@@ -145,35 +145,23 @@ async def on_message(message: cl.Message):
                     except Exception as e:
                         print(f"[Erro State] {e}")
 
-                        # Gera gráfico interativo para simulação
-                        if name == "simular_investimento":
-                            try:
-                                import plotly.graph_objects as go
-                                args = tc["args"]
-                                meses = args.get("meses", 12)
-                                valor_mensal = args.get("valor_mensal", 0)
-                                taxa_anual = args.get("taxa_anual_porcentagem", 10.0)
-                                taxa_mensal = (taxa_anual / 100) / 12
-                                
-                                evolucao = []
-                                investido = []
-                                m = 0.0
-                                for i in range(meses):
-                                    m = (m + valor_mensal) * (1 + taxa_mensal)
-                                    evolucao.append(m)
-                                    investido.append((i + 1) * valor_mensal)
-                                
-                                eixo_x = list(range(1, meses + 1))
-                                
-                                fig = go.Figure()
-                                fig.add_trace(go.Scatter(x=eixo_x, y=evolucao, mode='lines', name='Com Juros Compostos', line=dict(color='#38bdf8', width=3)))
-                                fig.add_trace(go.Scatter(x=eixo_x, y=investido, mode='lines', name='Total Investido', line=dict(color='#f472b6', width=2, dash='dash')))
-                                fig.update_layout(title='Projeção de Investimento', xaxis_title='Meses', yaxis_title='Valor Acumulado (R$)', template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='#94a3b8'))
-                                
-                                investment_chart = cl.Plotly(name="Simulação Interativa", figure=fig, display="inline")
-                            except Exception as e:
-                                print(f"[Erro Plotly] {e}")
-                
+                    # Gera gráfico interativo para simulação usando os dados VINDOS DA TOOL
+                    if name == "simular_investimento" and 'data' in locals() and isinstance(data, dict) and "dashboard_data" in data:
+                        try:
+                            import plotly.graph_objects as go
+                            sim_data = data["dashboard_data"]
+                            eixo_x = sim_data["meses"]
+                            evolucao = sim_data["montante"]
+                            investido = sim_data["investido"]
+                            
+                            fig = go.Figure()
+                            fig.add_trace(go.Scatter(x=eixo_x, y=evolucao, mode='lines', name='Com Juros Compostos', line=dict(color='#38bdf8', width=3)))
+                            fig.add_trace(go.Scatter(x=eixo_x, y=investido, mode='lines', name='Total Investido', line=dict(color='#f472b6', width=2, dash='dash')))
+                            fig.update_layout(title='Projeção de Investimento', xaxis_title='Meses', yaxis_title='Valor Acumulado (R$)', template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='#94a3b8'))
+                            
+                            investment_chart = cl.Plotly(name="Simulação Interativa", figure=fig, display="inline")
+                        except Exception as e:
+                            print(f"[Erro Plotly] {e}")
     # Atualiza a interface com a resposta em texto
     msg.content = final_response
     
