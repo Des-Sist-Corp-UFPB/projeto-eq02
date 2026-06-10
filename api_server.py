@@ -71,6 +71,18 @@ def dashboard_data(request: Request):
     if not cpf:
         raise HTTPException(status_code=401, detail="Não autenticado")
     
+    # Lê o estado de visibilidade
+    show_dashboard = False
+    state_file = f"state_{cpf}.json"
+    if os.path.exists(state_file):
+        import json
+        try:
+            with open(state_file, "r") as f:
+                state = json.load(f)
+                show_dashboard = state.get("show_dashboard", False)
+        except:
+            pass
+
     # Busca cliente
     client = execute_query("SELECT id, renda_total FROM clients WHERE cpf = %s", (cpf,), fetch=True, fetch_one=True)
     if not client:
@@ -97,6 +109,7 @@ def dashboard_data(request: Request):
     # O resto cai em outros ou investimentos
     
     return {
+        "show_dashboard": show_dashboard,
         "renda": renda,
         "total_gasto": total_gasto,
         "saldo_livre": saldo_livre,
@@ -143,6 +156,11 @@ def login(req: LoginRequest, response: Response):
     if not clients:
         raise HTTPException(status_code=401, detail="CPF ou E-mail inválidos.")
     
+    # Reseta a visibilidade do dashboard no login
+    import json
+    with open(f"state_{req.cpf}.json", "w") as f:
+        json.dump({"show_dashboard": False}, f)
+        
     # Prepara o JSON e seta o Cookie para o Chainlit poder ler
     json_resp = JSONResponse(content={"message": "Login efetuado com sucesso!", "cpf": req.cpf})
 

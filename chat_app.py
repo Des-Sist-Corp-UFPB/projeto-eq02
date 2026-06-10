@@ -111,10 +111,22 @@ async def on_message(message: cl.Message):
                 if chatbot_msg.content:
                     final_response = chatbot_msg.content
                 
-                # Intercepta se o LLM chamou o simulador para gerar o gráfico interativo
+                # Intercepta se o LLM chamou ferramentas para exibir graficos ou ativar dashboard
                 if hasattr(chatbot_msg, "tool_calls") and chatbot_msg.tool_calls:
                     for tc in chatbot_msg.tool_calls:
-                        if tc["name"] == "simular_investimento":
+                        name = tc["name"]
+                        
+                        # Ativa o painel direito se usar ferramentas financeiras
+                        if name in ["analisar_fluxo_caixa", "add_transaction", "query_transactions", "update_transaction", "delete_transaction"]:
+                            try:
+                                import json
+                                with open(f"state_{cpf}.json", "w") as f:
+                                    json.dump({"show_dashboard": True}, f)
+                            except Exception as e:
+                                print(f"[Erro State] {e}")
+
+                        # Gera gráfico interativo para simulação
+                        if name == "simular_investimento":
                             try:
                                 import plotly.graph_objects as go
                                 args = tc["args"]

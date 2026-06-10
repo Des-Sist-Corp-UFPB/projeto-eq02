@@ -1,29 +1,35 @@
 const renderDashboardHtml = () => `
-    <div class="dash-header">
-        <h1>Visão Geral do Mês</h1>
-        <div class="kpi-row">
-            <div class="kpi-card">
-                <h3>Renda Total</h3>
-                <p id="renda-val">R$ 0,00</p>
-            </div>
-            <div class="kpi-card">
-                <h3>Total Gasto (Mês)</h3>
-                <p id="gasto-val">R$ 0,00</p>
-            </div>
-            <div class="kpi-card highlight">
-                <h3>Saldo Livre Projetado</h3>
-                <p id="saldo-val">R$ 0,00</p>
-            </div>
-        </div>
+    <div id="welcome-msg" style="display:flex; justify-content:center; align-items:center; height:100%; text-align:center; flex-direction:column; color:#94a3b8;">
+        <h2>Bem-vindo ao FinancIA's!</h2>
+        <p>Converse com o agente na lateral. <br>Seus gráficos aparecerão aqui quando você solicitar resumos, visualizar gastos ou cadastrar contas.</p>
     </div>
-    <div class="charts-row">
-        <div class="chart-box">
-            <h3>Distribuição 50/30/20</h3>
-            <canvas id="chart503020"></canvas>
+    <div id="dash-content" style="display:none;">
+        <div class="dash-header">
+            <h1>Visão Geral do Mês</h1>
+            <div class="kpi-row">
+                <div class="kpi-card">
+                    <h3>Renda Total</h3>
+                    <p id="renda-val">R$ 0,00</p>
+                </div>
+                <div class="kpi-card">
+                    <h3>Total Gasto (Mês)</h3>
+                    <p id="gasto-val">R$ 0,00</p>
+                </div>
+                <div class="kpi-card highlight">
+                    <h3>Saldo Livre Projetado</h3>
+                    <p id="saldo-val">R$ 0,00</p>
+                </div>
+            </div>
         </div>
-        <div class="chart-box">
-            <h3>Gastos por Categoria</h3>
-            <canvas id="chartCategories"></canvas>
+        <div class="charts-row">
+            <div class="chart-box">
+                <h3>Distribuição 50/30/20</h3>
+                <canvas id="chart503020"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3>Gastos por Categoria</h3>
+                <canvas id="chartCategories"></canvas>
+            </div>
         </div>
     </div>
 `;
@@ -44,6 +50,18 @@ async function fetchAndUpdateDashboard() {
             return;
         }
         const data = await res.json();
+        
+        // Verifica se a página é a dashboard_only, nesse caso sempre mostra
+        const isDashboardOnly = document.body.classList.contains('dashboard-only-layout');
+        const shouldShow = data.show_dashboard || isDashboardOnly;
+        
+        if (shouldShow) {
+            document.getElementById('welcome-msg').style.display = 'none';
+            document.getElementById('dash-content').style.display = 'block';
+        } else {
+            document.getElementById('welcome-msg').style.display = 'flex';
+            document.getElementById('dash-content').style.display = 'none';
+        }
         
         // Atualiza KPIs
         document.getElementById('renda-val').innerText = formatCurrency(data.renda);
