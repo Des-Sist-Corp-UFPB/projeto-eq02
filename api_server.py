@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Response, Request
 from pydantic import BaseModel
+from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, JSONResponse
@@ -7,6 +8,7 @@ from tools.db import execute_query, execute_insert
 from chainlit.utils import mount_chainlit
 from datetime import datetime, timezone
 import os
+from state import DASHBOARD_STATES
 
 app = FastAPI(title="FinancIA's API")
 
@@ -44,6 +46,14 @@ def startup_event():
         print("ERRO: Arquivo sql/01_init_schema.sql NAO ENCONTRADO!", flush=True)
         print(f"Arquivos na pasta atual: {os.listdir(os.path.dirname(__file__))}", flush=True)
 
+class TransactionInput(BaseModel):
+    category: str
+    amount: float
+    description: str
+    status: str
+    due_date: Optional[str] = None
+    paid_date: Optional[str] = None
+
 class LoginRequest(BaseModel):
     cpf: str
     email: str
@@ -52,6 +62,10 @@ class RegisterRequest(BaseModel):
     nome: str
     cpf: str
     email: str
+
+class DashboardStateRequest(BaseModel):
+    cpf: str
+    state: bool
 
 @app.get("/")
 def root():
@@ -71,18 +85,9 @@ def dashboard_data(request: Request):
     if not cpf:
         raise HTTPException(status_code=401, detail="Não autenticado")
     
-    # Lê o estado de visibilidade
-    show_dashboard = False
-    state_file = os.path.join(os.path.dirname(__file__), f"state_{cpf}.json")
-    if os.path.exists(state_file):
-        import json
-        try:
-            with open(state_file, "r") as f:
-                state = json.load(f)
-                show_dashboard = state.get("show_dashboard", False)
-        except:
-            pass
-
+    # Lê o estado de visibilidade da memória
+    show_dashboard = DASHBOARD_STATES.get(cpf, False)
+    
     # Busca cliente
     client = execute_query("SELECT id, renda_total FROM clients WHERE cpf = %s", (cpf,), fetch=True, fetch_one=True)
     if not client:
@@ -157,11 +162,7 @@ def login(req: LoginRequest, response: Response):
         raise HTTPException(status_code=401, detail="CPF ou E-mail inválidos.")
     
     # Reseta a visibilidade do dashboard no login
-    import json
-    import os
-    state_file = os.path.join(os.path.dirname(__file__), f"state_{req.cpf}.json")
-    with open(state_file, "w") as f:
-        json.dump({"show_dashboard": False}, f)
+    DASHBOARD_STATES[req.cpf] = False
         
     # Prepara o JSON e seta o Cookie para o Chainlit poder ler
     json_resp = JSONResponse(content={"message": "Login efetuado com sucesso!", "cpf": req.cpf})

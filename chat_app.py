@@ -119,11 +119,8 @@ async def on_message(message: cl.Message):
                         # Ativa o painel direito se usar ferramentas financeiras
                         if name in ["analisar_fluxo_caixa", "add_transaction", "query_transactions", "update_transaction", "delete_transaction"]:
                             try:
-                                import json
-                                import os
-                                state_file = os.path.join(os.path.dirname(__file__), f"state_{cpf}.json")
-                                with open(state_file, "w") as f:
-                                    json.dump({"show_dashboard": True}, f)
+                                from state import DASHBOARD_STATES
+                                DASHBOARD_STATES[cpf] = True
                             except Exception as e:
                                 print(f"[Erro State] {e}")
 
