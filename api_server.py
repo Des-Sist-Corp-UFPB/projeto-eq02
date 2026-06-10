@@ -110,9 +110,13 @@ def dashboard_data(request: Request):
         "sim_data": sim_data,
         "renda": dados_fluxo["renda_mensal"],
         "total_gasto": dados_fluxo["total_gasto_mes_atual"],
-        "saldo_livre": dados_fluxo["saldo_livre_projetado"],
+        "saldo_livre": dados_fluxo.get("saldo_livre_projetado", 0),
         "categorias": categorias_formatadas,
-        "regra_50_30_20": dados_fluxo.get("regra_50_30_20", {"Necessidades": 0, "Desejos": 0, "Futuro": 0})
+        "resumo_fluxo": {
+            "Gastos Efetuados": dados_fluxo.get("total_gasto_mes_atual", 0),
+            "Gastos Pendentes": dados_fluxo.get("total_contas_pendentes", 0),
+            "Saldo Livre": dados_fluxo.get("saldo_livre_projetado", 0)
+        }
     }
 
 @app.get("/ping")

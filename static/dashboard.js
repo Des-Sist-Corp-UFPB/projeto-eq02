@@ -25,8 +25,8 @@ const renderDashboardHtml = () => `
         </div>
         <div class="charts-row">
             <div class="chart-box">
-                <h3>Distribuição 50/30/20</h3>
-                <canvas id="chart503020"></canvas>
+                <h3>Composição do Fluxo de Caixa</h3>
+                <canvas id="chartFluxoCaixa"></canvas>
             </div>
             <div class="chart-box">
                 <h3>Gastos por Categoria</h3>
@@ -65,7 +65,7 @@ const renderDashboardHtml = () => `
 
 document.getElementById('dashboard-root').innerHTML = renderDashboardHtml();
 
-let chart503020Instance = null;
+let chartFluxoInstance = null;
 let chartCategoriesInstance = null;
 let chartInvestimentosInstance = null;
 
@@ -127,29 +127,29 @@ async function fetchAndUpdateDashboard() {
 }
 
 function updateChartsFluxo(data) {
-    const ctx503020 = document.getElementById('chart503020').getContext('2d');
+    const ctxFluxo = document.getElementById('chartFluxoCaixa').getContext('2d');
     
-    let valNec = data.regra_50_30_20.Necessidades;
-    let valDes = data.regra_50_30_20.Desejos;
-    let valFut = data.regra_50_30_20.Futuro;
+    let valGasto = data.resumo_fluxo['Gastos Efetuados'];
+    let valPendente = data.resumo_fluxo['Gastos Pendentes'];
+    let valSobra = data.resumo_fluxo['Saldo Livre'];
     
-    if (valNec === 0 && valDes === 0 && valFut === 0) {
-        valFut = 0.01; 
+    if (valGasto === 0 && valPendente === 0 && valSobra <= 0) {
+        valSobra = 0.01; 
     }
 
-    const data503020 = [valNec, valDes, valFut];
+    const dataFluxo = [valGasto, valPendente, Math.max(0, valSobra)];
     
-    if (chart503020Instance) {
-        chart503020Instance.data.datasets[0].data = data503020;
-        chart503020Instance.update();
+    if (chartFluxoInstance) {
+        chartFluxoInstance.data.datasets[0].data = dataFluxo;
+        chartFluxoInstance.update();
     } else {
-        chart503020Instance = new Chart(ctx503020, {
+        chartFluxoInstance = new Chart(ctxFluxo, {
             type: 'doughnut',
             data: {
-                labels: ['Necessidades', 'Desejos', 'Futuro (Investimento)'],
+                labels: ['Gastos Efetuados', 'Contas Pendentes', 'Saldo Livre'],
                 datasets: [{
-                    data: data503020,
-                    backgroundColor: ['#38bdf8', '#f472b6', '#34d399'],
+                    data: dataFluxo,
+                    backgroundColor: ['#ef4444', '#f59e0b', '#34d399'],
                     borderWidth: 0,
                     hoverOffset: 4
                 }]
