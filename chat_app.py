@@ -111,16 +111,17 @@ async def on_message(message: cl.Message):
                 if chatbot_msg.content:
                     final_response = chatbot_msg.content
                 
-                # Intercepta se o LLM chamou ferramentas para exibir graficos ou ativar dashboard
+                # Intercepta se o LLM chamou ferramentas
                 if hasattr(chatbot_msg, "tool_calls") and chatbot_msg.tool_calls:
                     for tc in chatbot_msg.tool_calls:
-                        name = tc["name"]
-                        
-                        # Ativa o painel direito se usar ferramentas financeiras
-                        if name in ["analisar_fluxo_caixa", "add_transaction", "query_transactions", "update_transaction", "delete_transaction"]:
+                        name = tc.get("name", "")
+                        # Ativa o painel direito se usar qualquer ferramenta
+                        if name:
                             try:
                                 from state import DASHBOARD_STATES
                                 DASHBOARD_STATES[cpf] = True
+                                import asyncio
+                                asyncio.create_task(cl.Message(content=f"*(Debug do Agente: Ferramenta `{name}` acionada. Abrindo Painel...)*").send())
                             except Exception as e:
                                 print(f"[Erro State] {e}")
 
