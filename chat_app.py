@@ -120,8 +120,6 @@ async def on_message(message: cl.Message):
                             try:
                                 from state import DASHBOARD_STATES
                                 DASHBOARD_STATES[cpf] = True
-                                import asyncio
-                                asyncio.create_task(cl.Message(content=f"*(Debug do Agente: Ferramenta `{name}` acionada. Abrindo Painel...)*").send())
                             except Exception as e:
                                 print(f"[Erro State] {e}")
 
