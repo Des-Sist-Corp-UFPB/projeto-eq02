@@ -113,5 +113,10 @@ def analisar_fluxo_caixa(cpf: str) -> dict:
         "total_contas_pendentes": round(total_pendente, 2),
         "saldo_livre_projetado": round(renda - total_gasto - total_pendente, 2),
         "burn_rate_porcentagem": round(burn_rate, 2),
-        "gastos_por_categoria": {k: round(v, 2) for k, v in gastos_por_categoria.items()}
+        "gastos_por_categoria": {k: round(v, 2) for k, v in gastos_por_categoria.items()},
+        "regra_50_30_20": {
+            "Necessidades": round(sum(v for k, v in gastos_por_categoria.items() if k in ['Moradia', 'Alimentação', 'Saúde', 'Transporte', 'Educação']), 2),
+            "Desejos": round(sum(v for k, v in gastos_por_categoria.items() if k not in ['Moradia', 'Alimentação', 'Saúde', 'Transporte', 'Educação', 'Investimento', 'Reserva', 'Poupança']), 2),
+            "Futuro": round(sum(v for k, v in gastos_por_categoria.items() if k in ['Investimento', 'Reserva', 'Poupança']), 2)
+        }
     }

@@ -95,45 +95,24 @@ def dashboard_data(request: Request):
         view_ativa = state_obj.get("view", "fluxo_caixa")
         sim_data = state_obj.get("sim_data", {})
     
-    # Busca cliente
-    client = execute_query("SELECT id, renda_total FROM clients WHERE cpf = %s", (cpf,), fetch=True, fetch_one=True)
-    if not client:
-         raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    # O api_server agora é puramente um repassador de dados. Toda a matemática financeira mora na Tool.
+    from tools.advisor import analisar_fluxo_caixa
+    dados_fluxo = analisar_fluxo_caixa(cpf)
     
-    client_id = client[0]['id']
-    renda = float(client[0]['renda_total'])
-    
-    # Busca gastos do mês atual
-    hoje = datetime.now()
-    inicio_mes = hoje.replace(day=1).strftime('%Y-%m-%d')
-    
-    gastos = execute_query(
-        "SELECT category, SUM(amount) as total FROM transactions WHERE client_id = %s AND transaction_date >= %s GROUP BY category",
-        (client_id, inicio_mes)
-    )
-    
-    total_gasto = sum([float(g['total']) for g in gastos]) if gastos else 0.0
-    saldo_livre = renda - total_gasto
-    
-    # 50/30/20 baseado no GASTO (ou na Renda, o gráfico mostraremos o que foi gasto vs o que deveria)
-    necessidades_gasto = sum([float(g['total']) for g in gastos if g['category'] in ['Moradia', 'Alimentação', 'Saúde', 'Transporte', 'Educação']])
-    desejos_gasto = sum([float(g['total']) for g in gastos if g['category'] in ['Lazer', 'Roupas', 'Eletrônicos', 'Restaurante', 'Assinatura', 'Outros']])
-    # O resto (Investimento, Reserva) cai em Futuro
-    futuro_gasto = sum([float(g['total']) for g in gastos if g['category'] in ['Investimento', 'Reserva', 'Poupança']])
+    if "error" in dados_fluxo:
+        raise HTTPException(status_code=404, detail=dados_fluxo["error"])
+        
+    categorias_formatadas = [{"categoria": k, "total": v} for k, v in dados_fluxo["gastos_por_categoria"].items()]
     
     return {
         "show_dashboard": show_dashboard,
         "view": view_ativa,
         "sim_data": sim_data,
-        "renda": renda,
-        "total_gasto": total_gasto,
-        "saldo_livre": saldo_livre,
-        "categorias": [{"categoria": g['category'], "total": float(g['total'])} for g in gastos],
-        "regra_50_30_20": {
-            "Necessidades": necessidades_gasto,
-            "Desejos": desejos_gasto,
-            "Futuro": futuro_gasto
-        }
+        "renda": dados_fluxo["renda_mensal"],
+        "total_gasto": dados_fluxo["total_gasto_mes_atual"],
+        "saldo_livre": dados_fluxo["saldo_livre_projetado"],
+        "categorias": categorias_formatadas,
+        "regra_50_30_20": dados_fluxo.get("regra_50_30_20", {"Necessidades": 0, "Desejos": 0, "Futuro": 0})
     }
 
 @app.get("/ping")
