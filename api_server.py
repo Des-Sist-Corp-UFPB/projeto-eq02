@@ -73,7 +73,7 @@ def dashboard_data(request: Request):
     
     # Lê o estado de visibilidade
     show_dashboard = False
-    state_file = f"state_{cpf}.json"
+    state_file = os.path.join(os.path.dirname(__file__), f"state_{cpf}.json")
     if os.path.exists(state_file):
         import json
         try:
@@ -158,7 +158,9 @@ def login(req: LoginRequest, response: Response):
     
     # Reseta a visibilidade do dashboard no login
     import json
-    with open(f"state_{req.cpf}.json", "w") as f:
+    import os
+    state_file = os.path.join(os.path.dirname(__file__), f"state_{req.cpf}.json")
+    with open(state_file, "w") as f:
         json.dump({"show_dashboard": False}, f)
         
     # Prepara o JSON e seta o Cookie para o Chainlit poder ler
