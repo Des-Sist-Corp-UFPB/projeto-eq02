@@ -1,9 +1,11 @@
 const renderDashboardHtml = () => `
     <div id="welcome-msg" style="display:flex; justify-content:center; align-items:center; height:100%; text-align:center; flex-direction:column; color:#94a3b8;">
         <h2>Bem-vindo ao FinancIA's!</h2>
-        <p>Converse com o agente na lateral. <br>Seus gráficos aparecerão aqui quando você solicitar resumos, visualizar gastos ou cadastrar contas.</p>
+        <p>Converse com o agente na lateral. <br>Seus gráficos aparecerão aqui quando você solicitar resumos, visualizar gastos ou simular investimentos.</p>
     </div>
-    <div id="dash-content" style="display:none;">
+    
+    <!-- TELA 1: FLUXO DE CAIXA -->
+    <div id="dash-content-fluxo" style="display:none; width: 100%;">
         <div class="dash-header">
             <h1>Visão Geral do Mês</h1>
             <div class="kpi-row">
@@ -32,12 +34,40 @@ const renderDashboardHtml = () => `
             </div>
         </div>
     </div>
+
+    <!-- TELA 2: INVESTIMENTOS -->
+    <div id="dash-content-investimentos" style="display:none; width: 100%;">
+        <div class="dash-header">
+            <h1>Simulação de Investimentos</h1>
+            <div class="kpi-row">
+                <div class="kpi-card">
+                    <h3>Meses Simulados</h3>
+                    <p id="sim-meses">0</p>
+                </div>
+                <div class="kpi-card highlight">
+                    <h3>Total Investido (Bolso)</h3>
+                    <p id="sim-investido">R$ 0,00</p>
+                </div>
+                <div class="kpi-card highlight" style="background-color: rgba(52, 211, 153, 0.1); border-color: rgba(52, 211, 153, 0.3);">
+                    <h3>Montante Final (Juros)</h3>
+                    <p id="sim-montante" style="color: #34d399;">R$ 0,00</p>
+                </div>
+            </div>
+        </div>
+        <div class="charts-row">
+            <div class="chart-box" style="width: 100%;">
+                <h3>Evolução do Patrimônio (Juros Compostos)</h3>
+                <canvas id="chartInvestimentos" style="max-height: 400px;"></canvas>
+            </div>
+        </div>
+    </div>
 `;
 
 document.getElementById('dashboard-root').innerHTML = renderDashboardHtml();
 
 let chart503020Instance = null;
 let chartCategoriesInstance = null;
+let chartInvestimentosInstance = null;
 
 const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
@@ -45,56 +75,66 @@ async function fetchAndUpdateDashboard() {
     try {
         const res = await fetch('/api/dashboard_data');
         if (!res.ok) {
-            // Se der 401, significa que perdeu o cookie de login
             if(res.status === 401) window.location.href = '/';
             return;
         }
         const data = await res.json();
         
-        // Verifica se a página é a dashboard_only, nesse caso sempre mostra
         const isDashboardOnly = document.body.classList.contains('dashboard-only-layout');
         const shouldShow = data.show_dashboard || isDashboardOnly;
         
         if (shouldShow) {
             document.body.classList.add('show-dashboard');
             document.getElementById('welcome-msg').style.display = 'none';
-            document.getElementById('dash-content').style.display = 'block';
+            
+            if (data.view === 'investimentos') {
+                document.getElementById('dash-content-fluxo').style.display = 'none';
+                document.getElementById('dash-content-investimentos').style.display = 'block';
+                
+                if(data.sim_data && data.sim_data.montante && data.sim_data.montante.length > 0) {
+                    let ult = data.sim_data.montante.length - 1;
+                    document.getElementById('sim-meses').innerText = data.sim_data.meses.length;
+                    document.getElementById('sim-investido').innerText = formatCurrency(data.sim_data.investido[ult]);
+                    document.getElementById('sim-montante').innerText = formatCurrency(data.sim_data.montante[ult]);
+                    updateChartInvestimentos(data.sim_data);
+                }
+            } else {
+                document.getElementById('dash-content-investimentos').style.display = 'none';
+                document.getElementById('dash-content-fluxo').style.display = 'block';
+                
+                document.getElementById('renda-val').innerText = formatCurrency(data.renda);
+                document.getElementById('gasto-val').innerText = formatCurrency(data.total_gasto);
+                document.getElementById('saldo-val').innerText = formatCurrency(data.saldo_livre);
+                
+                const saldoEl = document.getElementById('saldo-val');
+                if (data.saldo_livre < 0) {
+                    saldoEl.style.color = '#ef4444'; 
+                } else {
+                    saldoEl.style.color = '#38bdf8'; 
+                }
+                
+                updateChartsFluxo(data);
+            }
         } else {
             document.body.classList.remove('show-dashboard');
             document.getElementById('welcome-msg').style.display = 'flex';
-            document.getElementById('dash-content').style.display = 'none';
+            document.getElementById('dash-content-fluxo').style.display = 'none';
+            document.getElementById('dash-content-investimentos').style.display = 'none';
         }
-        
-        // Atualiza KPIs
-        document.getElementById('renda-val').innerText = formatCurrency(data.renda);
-        document.getElementById('gasto-val').innerText = formatCurrency(data.total_gasto);
-        document.getElementById('saldo-val').innerText = formatCurrency(data.saldo_livre);
-        
-        // Modifica a cor do saldo livre se for negativo
-        const saldoEl = document.getElementById('saldo-val');
-        if (data.saldo_livre < 0) {
-            saldoEl.style.color = '#ef4444'; // Vermelho
-        } else {
-            saldoEl.style.color = '#38bdf8'; // Azul normal
-        }
-        
-        updateCharts(data);
     } catch (e) {
         console.error('Erro ao atualizar dashboard', e);
     }
 }
 
-function updateCharts(data) {
+function updateChartsFluxo(data) {
     const ctx503020 = document.getElementById('chart503020').getContext('2d');
     
-    // Tratamento para evitar gráfico vazio se não tiver gasto
     let valNec = data.regra_50_30_20.Necessidades;
     let valDes = data.regra_50_30_20.Desejos;
     let valFut = data.regra_50_30_20.Futuro;
     
-    // Se não há gastos definidos para a regra ainda, mostramos algo vazio ou zerado
     if (valNec === 0 && valDes === 0 && valFut === 0) {
-        valFut = 0.01; // Truque para o Chart.js desenhar um anel cinza
+        valFut = 0.01; 
     }
 
     const data503020 = [valNec, valDes, valFut];
@@ -106,7 +146,7 @@ function updateCharts(data) {
         chart503020Instance = new Chart(ctx503020, {
             type: 'doughnut',
             data: {
-                labels: ['Necessidades (50%)', 'Desejos (30%)', 'Futuro (20%)'],
+                labels: ['Necessidades', 'Desejos', 'Futuro (Investimento)'],
                 datasets: [{
                     data: data503020,
                     backgroundColor: ['#38bdf8', '#f472b6', '#34d399'],
@@ -117,7 +157,8 @@ function updateCharts(data) {
             options: {
                 responsive: true,
                 plugins: { 
-                    legend: { labels: { color: '#e2e8f0' }, position: 'bottom' } 
+                    legend: { labels: { color: '#e2e8f0' }, position: 'bottom' },
+                    tooltip: { callbacks: { label: function(context) { return " R$ " + context.raw.toFixed(2).replace('.', ','); } } }
                 }
             }
         });
@@ -137,7 +178,7 @@ function updateCharts(data) {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Gasto no Mês (R$)',
+                    label: 'Gasto no Mês',
                     data: values,
                     backgroundColor: '#818cf8',
                     borderRadius: 6
@@ -146,17 +187,64 @@ function updateCharts(data) {
             options: {
                 responsive: true,
                 scales: {
+                    y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+}
+
+function updateChartInvestimentos(simData) {
+    const ctxInv = document.getElementById('chartInvestimentos').getContext('2d');
+    
+    if (chartInvestimentosInstance) {
+        chartInvestimentosInstance.data.labels = simData.meses.map(m => "Mês " + m);
+        chartInvestimentosInstance.data.datasets[0].data = simData.montante;
+        chartInvestimentosInstance.data.datasets[1].data = simData.investido;
+        chartInvestimentosInstance.update();
+    } else {
+        chartInvestimentosInstance = new Chart(ctxInv, {
+            type: 'line',
+            data: {
+                labels: simData.meses.map(m => "Mês " + m),
+                datasets: [
+                    {
+                        label: 'Montante com Juros',
+                        data: simData.montante,
+                        borderColor: '#34d399',
+                        backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Total Investido (Sem Juros)',
+                        data: simData.investido,
+                        borderColor: '#94a3b8',
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
                     y: { 
-                        beginAtZero: true,
+                        beginAtZero: true, 
                         ticks: { color: '#94a3b8' }, 
                         grid: { color: 'rgba(255,255,255,0.05)' } 
                     },
                     x: { 
-                        ticks: { color: '#94a3b8' }, 
+                        ticks: { color: '#94a3b8', maxTicksLimit: 12 }, 
                         grid: { display: false } 
                     }
                 },
-                plugins: { legend: { display: false } }
+                plugins: { legend: { labels: { color: '#e2e8f0' } } }
             }
         });
     }

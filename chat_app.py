@@ -108,20 +108,42 @@ async def on_message(message: cl.Message):
         for node, update in event.items():
             if node == "chatbot":
                 chatbot_msg = update["messages"][-1]
-                if chatbot_msg.content:
+                if hasattr(chatbot_msg, "content") and chatbot_msg.content:
                     final_response = chatbot_msg.content
-                
+                    
                 # Intercepta se o LLM chamou ferramentas
                 if hasattr(chatbot_msg, "tool_calls") and chatbot_msg.tool_calls:
-                    for tc in chatbot_msg.tool_calls:
-                        name = tc.get("name", "")
-                        # Ativa o painel direito se usar qualquer ferramenta
-                        if name:
-                            try:
-                                from state import DASHBOARD_STATES
-                                DASHBOARD_STATES[cpf] = True
-                            except Exception as e:
-                                print(f"[Erro State] {e}")
+                    pass # Deixamos a interceptação real para o nó 'tools' onde o retorno chega
+                        
+            if node == "tools":
+                tool_msg = update["messages"][-1]
+                name = getattr(tool_msg, "name", "")
+                if name:
+                    try:
+                        from state import DASHBOARD_STATES
+                        if "simular_investimento" in name:
+                            import json
+                            # O conteúdo retornado pela tool do MCP é uma string
+                            data = json.loads(tool_msg.content)
+                            # Se veio como string JSON serializada duas vezes, fazemos fallback
+                            if isinstance(data, str):
+                                data = json.loads(data)
+                                
+                            if isinstance(data, dict) and "dashboard_data" in data:
+                                DASHBOARD_STATES[cpf] = {
+                                    "view": "investimentos",
+                                    "sim_data": data["dashboard_data"]
+                                }
+                        else:
+                            # Mantem a view atual ou reseta para fluxo_caixa
+                            atual = DASHBOARD_STATES.get(cpf)
+                            if not isinstance(atual, dict):
+                                DASHBOARD_STATES[cpf] = {"view": "fluxo_caixa"}
+                            else:
+                                atual["view"] = "fluxo_caixa"
+                                DASHBOARD_STATES[cpf] = atual
+                    except Exception as e:
+                        print(f"[Erro State] {e}")
 
                         # Gera gráfico interativo para simulação
                         if name == "simular_investimento":

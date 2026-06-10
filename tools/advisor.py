@@ -10,11 +10,29 @@ mcp = FastMCP("advisor")
 @mcp.tool()
 def simular_investimento(valor_mensal: float, meses: int, taxa_anual_porcentagem: float = 10.0) -> dict:
     """Calcula o montante final de um investimento com aportes mensais usando juros compostos."""
+    import json
     taxa_mensal = (taxa_anual_porcentagem / 100) / 12
     montante = 0.0
+    investido = 0.0
+    hist_montante = []
+    hist_investido = []
+    
     for _ in range(meses):
+        investido += valor_mensal
         montante = (montante + valor_mensal) * (1 + taxa_mensal)
-    return {"montante_final": round(montante, 2), "total_investido": round(valor_mensal * meses, 2)}
+        hist_montante.append(round(montante, 2))
+        hist_investido.append(round(investido, 2))
+        
+    return {
+        "montante_final": round(montante, 2), 
+        "total_investido": round(investido, 2),
+        "dica": "O historico completo foi gerado. Os arrays de historico estao no objeto dashboard_data. Voce nao precisa recitar o array, apenas diga que o painel lateral ja atualizou com o grafico de juros compostos.",
+        "dashboard_data": {
+            "meses": list(range(1, meses+1)),
+            "montante": hist_montante,
+            "investido": hist_investido
+        }
+    }
 
 @mcp.tool()
 def sugerir_investimentos(saldo_livre: float) -> dict:

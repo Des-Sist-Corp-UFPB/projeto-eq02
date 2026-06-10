@@ -86,7 +86,14 @@ def dashboard_data(request: Request):
         raise HTTPException(status_code=401, detail="Não autenticado")
     
     # Lê o estado de visibilidade da memória
-    show_dashboard = DASHBOARD_STATES.get(cpf, False)
+    state_obj = DASHBOARD_STATES.get(cpf, {"view": "fluxo_caixa"})
+    show_dashboard = False if state_obj is False else True
+    
+    view_ativa = "fluxo_caixa"
+    sim_data = {}
+    if isinstance(state_obj, dict):
+        view_ativa = state_obj.get("view", "fluxo_caixa")
+        sim_data = state_obj.get("sim_data", {})
     
     # Busca cliente
     client = execute_query("SELECT id, renda_total FROM clients WHERE cpf = %s", (cpf,), fetch=True, fetch_one=True)
@@ -110,11 +117,14 @@ def dashboard_data(request: Request):
     
     # 50/30/20 baseado no GASTO (ou na Renda, o gráfico mostraremos o que foi gasto vs o que deveria)
     necessidades_gasto = sum([float(g['total']) for g in gastos if g['category'] in ['Moradia', 'Alimentação', 'Saúde', 'Transporte', 'Educação']])
-    desejos_gasto = sum([float(g['total']) for g in gastos if g['category'] in ['Lazer', 'Roupas', 'Eletrônicos', 'Restaurante']])
-    # O resto cai em outros ou investimentos
+    desejos_gasto = sum([float(g['total']) for g in gastos if g['category'] in ['Lazer', 'Roupas', 'Eletrônicos', 'Restaurante', 'Assinatura', 'Outros']])
+    # O resto (Investimento, Reserva) cai em Futuro
+    futuro_gasto = sum([float(g['total']) for g in gastos if g['category'] in ['Investimento', 'Reserva', 'Poupança']])
     
     return {
         "show_dashboard": show_dashboard,
+        "view": view_ativa,
+        "sim_data": sim_data,
         "renda": renda,
         "total_gasto": total_gasto,
         "saldo_livre": saldo_livre,
@@ -122,7 +132,7 @@ def dashboard_data(request: Request):
         "regra_50_30_20": {
             "Necessidades": necessidades_gasto,
             "Desejos": desejos_gasto,
-            "Futuro": total_gasto - necessidades_gasto - desejos_gasto # Simplificação para o gráfico atual
+            "Futuro": futuro_gasto
         }
     }
 
