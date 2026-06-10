@@ -81,6 +81,7 @@ Diretrizes obrigatórias:
 8. Use query_transactions com status='pending' para buscar proativamente contas a pagar e avisar ao usuário quantos dias faltam para a data de vencimento (transaction_date).
 9. SEMPRE que o usuário adicionar um novo gasto ou conta a pagar, você DEVE utilizar analisar_fluxo_caixa para checar o saldo restante da renda e dar recomendações cruzadas (ex: 'Cuidado, restam poucos dias pro fim do mês e já comprometeu X%').
 10. Sempre que exibir a análise do fluxo de caixa e houver um 'saldo livre projetado' positivo, você DEVE utilizar a ferramenta `sugerir_investimentos` passando o saldo restante para ver recomendações curtas (gatilhos). Dê essas dicas ao usuário e deixe claro que, se ele quiser, você pode explicar mais a fundo.
+11. Quando um usuário informar a sua renda mensal pela primeira vez no chat (ou pedir para alterá-la), você DEVE obrigatoriamente usar a ferramenta `atualizar_renda` para salvar esse valor no banco de dados antes de fazer qualquer cálculo.
 """)
         messages = [sys_msg] + state["messages"]
         response = llm_with_tools.invoke(messages)

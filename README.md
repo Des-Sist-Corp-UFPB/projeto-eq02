@@ -22,8 +22,9 @@ Graças à integração com múltiplas ferramentas (Tools) via protocolo MCP, o 
 
 2. **Controle de Gastos e Despesas:**
    - **Registro Natural:** O usuário pode apenas dizer "Gastei 50 reais de ifood ontem" e o agente entende o valor, a data e a categoria (Alimentação), salvando no banco.
-   - **Correção Inteligente de Gastos:** Cometeu um erro ao registrar? Basta dizer "na verdade o lanche não foi 15 reais, foi 10" e o assistente identifica automaticamente qual gasto você está corrigindo e atualiza o valor no banco de dados.
+   - **Correção Inteligente e Exclusão:** Cometeu um erro ao registrar? Basta dizer "na verdade o lanche não foi 15 reais, foi 10" e o assistente identifica automaticamente qual gasto você está corrigindo e atualiza o valor no banco de dados. Você também pode pedir para o agente apagar uma transação duplicada.
    - **Compras Parceladas:** Registre compras divididas no cartão (ex: "Comprei uma TV de R$5000 em 10x"). O Agente deduzirá de forma fracionada o valor de cada parcela exclusivamente no mês correspondente do seu fluxo de caixa.
+   - **Ciclo Mensal e Contas a Pagar:** O assistente diferencia automaticamente o que são *gastos efetivados* e o que são *contas pendentes*. Ele avisa quantos dias faltam para a conta vencer e projeta o saldo livre descontando os boletos a pagar.
    - **Comandos de Voz:** Sem vontade de digitar? Aperte o microfone na tela, fale seus gastos ou faça perguntas por áudio e veja o agente transcrever e executar a tarefa!
    - **Consultas e Relatórios:** O agente pesquisa no histórico e traz resumos como "Quanto gastei com lazer esse mês?".
 
@@ -35,9 +36,10 @@ Graças à integração com múltiplas ferramentas (Tools) via protocolo MCP, o 
    - O agente não apenas anota, ele analisa! Ele compara os gastos dos últimos 30 dias com a renda atual.
    - Aplica a famosa regra 50% (Necessidades), 30% (Desejos) e 20% (Futuro), mostrando onde o usuário está errando no orçamento e calculando a taxa de queima mensal (*burn rate*).
 
-5. **Simulação de Investimentos:**
+5. **Consultoria Ativa de Investimentos:**
    - Se o usuário perguntar sobre o futuro, o agente roda um simulador matemático de juros compostos.
    - Responde dúvidas como: "Se eu investir R$ 300 por mês rendendo 10% ao ano, quanto terei em 5 anos?".
+   - **Sugestão Pró-ativa (Gatilhos):** Sempre que a análise de fluxo de caixa mostrar que o usuário vai fechar o mês com o *Saldo Livre Projetado* positivo, o assistente ativa uma ferramenta dedicada para recomendar investimentos (ex: CDB de Liquidez Diária, Tesouro Selic, FIIs ou ETFs) baseados exatamente no valor que vai sobrar na conta.
 
 6. **Memória Contínua:**
    - Salva informações chave sobre os objetivos do cliente na memória (ex: "Economizando para casar") e usa esse contexto no início de novas conversas para dar um toque extremamente pessoal ao atendimento.
@@ -48,6 +50,7 @@ Graças à integração com múltiplas ferramentas (Tools) via protocolo MCP, o 
 3. **Chat Engine (`chat_app.py`):** Construído em Chainlit. Ele intercepta o Cookie de login, identifica o usuário via CPF e aciona o Agente, delegando a responsabilidade do roteiro inicial para o backend.
 4. **Servidor de Ferramentas (`mcp_server.py`):** Implementa o protocolo MCP (*Model Context Protocol*) para expor de forma limpa, modular e segura todas as ferramentas de banco de dados, memória e matemática (simuladores).
 5. **Cérebro (`agent.py`):** O Grafo de Estado (LangGraph) do agente, conectando o LLM (OpenAI) ao servidor de ferramentas usando adaptadores oficiais do MCP.
+6. **Diagnóstico Embutido:** Uma rota especial (`/debug_db`) disponível na API para que desenvolvedores possam verificar rapidamente se as tabelas e dados falsos foram criados corretamente no PostgreSQL.
 
 ## 🚀 Como Executar o Projeto Localmente
 
