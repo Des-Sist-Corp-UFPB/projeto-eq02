@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinancIA's - Painel Híbrido</title>
+    <link rel="stylesheet" href="/static/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="hibrido-layout">
+    
+    <!-- Lado Esquerdo: CHAT -->
+    <div class="chat-container">
+        <iframe src="/chat" id="chat-frame"></iframe>
+    </div>
+
+    <!-- Lado Direito: DASHBOARD -->
+    <div class="dashboard-container">
+        <div id="dashboard-root"></div>
+    </div>
+
+    <script src="/static/dashboard.js"></script>
+</body>
+</html>

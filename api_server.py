@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Response, Request
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -57,6 +57,57 @@ class RegisterRequest(BaseModel):
 def root():
     return RedirectResponse(url="/static/login.html")
 
+@app.get("/hibrido")
+def get_hibrido():
+    return RedirectResponse(url="/static/hibrido.html")
+
+@app.get("/dashboard")
+def get_dashboard():
+    return RedirectResponse(url="/static/dashboard_only.html")
+
+@app.get("/api/dashboard_data")
+def dashboard_data(request: Request):
+    cpf = request.cookies.get("auth_cpf")
+    if not cpf:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+    
+    # Busca cliente
+    client = execute_query("SELECT id, renda_total FROM clients WHERE cpf = %s", (cpf,), fetch=True, fetch_one=True)
+    if not client:
+         raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    client_id = client[0]['id']
+    renda = float(client[0]['renda_total'])
+    
+    # Busca gastos do mês atual
+    hoje = datetime.now()
+    inicio_mes = hoje.replace(day=1).strftime('%Y-%m-%d')
+    
+    gastos = execute_query(
+        "SELECT category, SUM(amount) as total FROM transactions WHERE client_id = %s AND transaction_date >= %s GROUP BY category",
+        (client_id, inicio_mes)
+    )
+    
+    total_gasto = sum([float(g['total']) for g in gastos]) if gastos else 0.0
+    saldo_livre = renda - total_gasto
+    
+    # 50/30/20 baseado no GASTO (ou na Renda, o gráfico mostraremos o que foi gasto vs o que deveria)
+    necessidades_gasto = sum([float(g['total']) for g in gastos if g['category'] in ['Moradia', 'Alimentação', 'Saúde', 'Transporte', 'Educação']])
+    desejos_gasto = sum([float(g['total']) for g in gastos if g['category'] in ['Lazer', 'Roupas', 'Eletrônicos', 'Restaurante']])
+    # O resto cai em outros ou investimentos
+    
+    return {
+        "renda": renda,
+        "total_gasto": total_gasto,
+        "saldo_livre": saldo_livre,
+        "categorias": [{"categoria": g['category'], "total": float(g['total'])} for g in gastos],
+        "regra_50_30_20": {
+            "Necessidades": necessidades_gasto,
+            "Desejos": desejos_gasto,
+            "Futuro": total_gasto - necessidades_gasto - desejos_gasto # Simplificação para o gráfico atual
+        }
+    }
+
 @app.get("/ping")
 def ping():
     return {
@@ -102,6 +153,7 @@ def login(req: LoginRequest, response: Response):
     json_resp.delete_cookie("session_id", path="/chat")
 
     json_resp.set_cookie(key="auth_cpf", value=req.cpf, httponly=False, path="/")
+    json_resp.content = '{"message": "Login efetuado com sucesso!", "cpf": "' + req.cpf + '", "redirect": "/hibrido"}'
     return json_resp
 
 @app.post("/register")

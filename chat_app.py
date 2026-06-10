@@ -99,6 +99,7 @@ async def on_message(message: cl.Message):
     
     # Processamento do LangGraph
     final_response = "Desculpe, erro ao pensar."
+    investment_chart = None
     
     agent_app = await get_agent_app()
     
@@ -107,11 +108,47 @@ async def on_message(message: cl.Message):
         for node, update in event.items():
             if node == "chatbot":
                 chatbot_msg = update["messages"][-1]
-                final_response = chatbot_msg.content
+                if chatbot_msg.content:
+                    final_response = chatbot_msg.content
+                
+                # Intercepta se o LLM chamou o simulador para gerar o gráfico interativo
+                if hasattr(chatbot_msg, "tool_calls") and chatbot_msg.tool_calls:
+                    for tc in chatbot_msg.tool_calls:
+                        if tc["name"] == "simular_investimento":
+                            try:
+                                import plotly.graph_objects as go
+                                args = tc["args"]
+                                meses = args.get("meses", 12)
+                                valor_mensal = args.get("valor_mensal", 0)
+                                taxa_anual = args.get("taxa_anual_porcentagem", 10.0)
+                                taxa_mensal = (taxa_anual / 100) / 12
+                                
+                                evolucao = []
+                                investido = []
+                                m = 0.0
+                                for i in range(meses):
+                                    m = (m + valor_mensal) * (1 + taxa_mensal)
+                                    evolucao.append(m)
+                                    investido.append((i + 1) * valor_mensal)
+                                
+                                eixo_x = list(range(1, meses + 1))
+                                
+                                fig = go.Figure()
+                                fig.add_trace(go.Scatter(x=eixo_x, y=evolucao, mode='lines', name='Com Juros Compostos', line=dict(color='#38bdf8', width=3)))
+                                fig.add_trace(go.Scatter(x=eixo_x, y=investido, mode='lines', name='Total Investido', line=dict(color='#f472b6', width=2, dash='dash')))
+                                fig.update_layout(title='Projeção de Investimento', xaxis_title='Meses', yaxis_title='Valor Acumulado (R$)', template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='#94a3b8'))
+                                
+                                investment_chart = cl.Plotly(name="Simulação Interativa", figure=fig, display="inline")
+                            except Exception as e:
+                                print(f"[Erro Plotly] {e}")
                 
     # Atualiza a interface com a resposta em texto
     msg.content = final_response
-    await msg.update()
+    
+    # Prepara elementos visuais (grafico e tts)
+    elements_to_show = []
+    if investment_chart:
+        elements_to_show.append(investment_chart)
     
     # Gera o Áudio da Resposta (TTS)
     try:
@@ -124,10 +161,12 @@ async def on_message(message: cl.Message):
         )
         # O retorno é um HttpxBinaryResponseContent, podemos extrair os bytes com .content
         tts_el = cl.Audio(name="Áudio do Agente", content=tts_response.content, display="inline", mime="audio/mp3")
-        msg.elements = [tts_el]
-        await msg.update()
+        elements_to_show.append(tts_el)
     except Exception as e:
         print(f"[Erro TTS] {e}")
+
+    msg.elements = elements_to_show
+    await msg.update()
 
 # Hook para ativar o ícone do microfone nativo e capturar áudio gravado
 @cl.on_audio_start
