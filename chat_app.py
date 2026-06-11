@@ -147,7 +147,10 @@ async def on_message(message: cl.Message):
                                         atual["view"] = "fluxo_caixa"
                                         DASHBOARD_STATES[cpf] = atual
                         except Exception as e:
+                            import traceback
                             print(f"[Erro State] {e}")
+                            with open("debug_dashboard.log", "a") as f:
+                                f.write(f"CHAT_APP_ERROR: {e}\\n{traceback.format_exc()}\\n")
 
                         # Gera gráfico interativo para simulação usando os dados VINDOS DA TOOL
                         if name in ["simular_investimento", "sugerir_investimentos"] and 'data' in locals() and isinstance(data, dict) and "dashboard_data" in data:

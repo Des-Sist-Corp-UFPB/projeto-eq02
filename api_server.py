@@ -122,6 +122,23 @@ def dashboard_data(request: Request):
         }
     }
 
+@app.get("/api/debug_state")
+def debug_state(request: Request):
+    cpf = request.cookies.get("auth_cpf")
+    from state import DASHBOARD_STATES
+    try:
+        with open("debug_dashboard.log", "r") as f:
+            logs = f.readlines()[-20:]
+    except:
+        logs = ["Arquivo de log nao encontrado"]
+        
+    return {
+        "cpf_logado": cpf,
+        "dashboard_states_completo": DASHBOARD_STATES,
+        "state_do_usuario": DASHBOARD_STATES.get(cpf, "Nao existe"),
+        "logs_recentes": logs
+    }
+
 @app.get("/ping")
 def ping():
     return {
