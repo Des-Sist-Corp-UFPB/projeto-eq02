@@ -26,12 +26,7 @@ def simular_investimento(valor_mensal: float, meses: int, taxa_anual_porcentagem
     return {
         "montante_final": round(montante, 2), 
         "total_investido": round(investido, 2),
-        "dica": "O historico completo foi gerado. Os arrays de historico estao no objeto dashboard_data. Voce nao precisa recitar o array, apenas diga que o painel lateral ja atualizou com o grafico de juros compostos.",
-        "dashboard_data": {
-            "meses": list(range(1, meses+1)),
-            "montante": hist_montante,
-            "investido": hist_investido
-        }
+        "dica": "Explique de forma resumida o resultado da simulação para o usuário. Não há gráficos, use apenas texto."
     }
 
 @mcp.tool()
@@ -105,16 +100,7 @@ def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False,
     return {
         "analise_estrategica": analise_estrategica,
         "opcoes_sugeridas": opcoes,
-        "dica": "ATENÇÃO: Foque apenas em explicar textualmente as opções. O gráfico é gerado automaticamente pelo frontend. NUNCA gere markdown de imagens ou base64.",
-        "dashboard_data": {
-            "chart_type": "bar_comparison",
-            "titulo": f"Comparação de Sugestões (Projeção para {meses_simulacao} meses)",
-            "labels": labels,
-            "valores": valores,
-            "valor_investido_puro": valor_investido_puro,
-            "meses": meses_simulacao,
-            "valor_mensal": valor_mensal
-        }
+        "dica": "ATENÇÃO: Foque apenas em explicar textualmente as opções de forma clara."
     }
 
 @mcp.tool()

@@ -96,7 +96,7 @@ async def on_message(message: cl.Message):
     # Forçar a invocação da tool de investimentos para evitar respostas de memória
     msg_lower_check = final_content.lower()
     if "invest" in msg_lower_check or "simula" in msg_lower_check or "suger" in msg_lower_check or "opções" in msg_lower_check:
-        final_content += "\n\n[SISTEMA]: OBRIGATÓRIO: Você DEVE invocar a ferramenta 'sugerir_investimentos' ou 'simular_investimento' agora mesmo. É ESTRITAMENTE PROIBIDO responder de memória. Após receber os dados da tool, gere a sua resposta de texto para o usuário. ATENÇÃO: NUNCA tente gerar gráficos em Markdown, base64 ou desenhar imagens. O gráfico será renderizado automaticamente pelo frontend em Plotly. Foque APENAS no texto descritivo."
+        final_content += "\n\n[SISTEMA]: OBRIGATÓRIO: Você DEVE invocar a ferramenta 'sugerir_investimentos' ou 'simular_investimento' agora mesmo. É ESTRITAMENTE PROIBIDO responder de memória. Após receber os dados da tool, gere a sua resposta de texto para o usuário. ATENÇÃO: NUNCA tente gerar gráficos em Markdown, desenhar imagens ou tabelas complexas. Foque APENAS no texto descritivo e direto das opções."
             
     # Prepara a mensagem visual do Chainlit
     msg = cl.Message(content="")
@@ -104,7 +104,6 @@ async def on_message(message: cl.Message):
     
     # Processamento do LangGraph
     final_response = "Desculpe, erro ao pensar."
-    investment_chart = None
     
     # Controle da visibilidade do painel direito (Dashboard)
     from state import DASHBOARD_STATES
@@ -137,7 +136,6 @@ async def on_message(message: cl.Message):
                     
                 for tool_msg in update.get("messages", []):
                     name = getattr(tool_msg, "name", tool_msg.get("name", "")) if isinstance(tool_msg, dict) else getattr(tool_msg, "name", "")
-                    content = tool_msg.get("content", "") if isinstance(tool_msg, dict) else getattr(tool_msg, "content", "")
                     
                     if name:
                         try:
@@ -147,54 +145,6 @@ async def on_message(message: cl.Message):
                             # (Abertura do fluxo de caixa movida para o final para sincronizar com a IA)
                         except Exception as e:
                             print(f"[Erro State] {e}")
-
-                        # Extrai o json de dados para os gráficos de investimento
-                        import json
-                        import ast
-                        data = None
-                        if name in ["simular_investimento", "sugerir_investimentos"]:
-                            try:
-                                data = content
-                                if isinstance(data, str):
-                                    try:
-                                        data = json.loads(data)
-                                    except json.JSONDecodeError:
-                                        # LangGraph transforma dicts em strings com aspas simples, json.loads falha.
-                                        data = ast.literal_eval(data)
-                                    
-                                    if isinstance(data, str):
-                                        try:
-                                            data = json.loads(data)
-                                        except json.JSONDecodeError:
-                                            data = ast.literal_eval(data)
-                            except Exception as parse_e:
-                                print(f"[Erro Parsing Tool Content] {parse_e}")
-                                pass
-
-                        # Gera gráfico interativo para simulação usando os dados VINDOS DA TOOL
-                        if name in ["simular_investimento", "sugerir_investimentos"] and 'data' in locals() and isinstance(data, dict) and "dashboard_data" in data:
-                            try:
-                                import plotly.graph_objects as go
-                                sim_data = data["dashboard_data"]
-                                
-                                fig = go.Figure()
-                                
-                                if sim_data.get("chart_type") == "bar_comparison":
-                                    # Gráfico de Barras
-                                    fig.add_trace(go.Bar(x=sim_data["labels"], y=sim_data["valores"], marker_color='#38bdf8', name='Projeção Final'))
-                                    fig.update_layout(title=sim_data["titulo"], xaxis_title='Sugestões', yaxis_title='Montante Final (R$)', template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='#94a3b8'))
-                                else:
-                                    # Gráfico de Linhas (Simular Investimento Clássico)
-                                    eixo_x = sim_data["meses"]
-                                    evolucao = sim_data["montante"]
-                                    investido = sim_data["investido"]
-                                    fig.add_trace(go.Scatter(x=eixo_x, y=evolucao, mode='lines', name='Com Juros Compostos', line=dict(color='#38bdf8', width=3)))
-                                    fig.add_trace(go.Scatter(x=eixo_x, y=investido, mode='lines', name='Total Investido', line=dict(color='#f472b6', width=2, dash='dash')))
-                                    fig.update_layout(title='Projeção de Investimento', xaxis_title='Meses', yaxis_title='Valor Acumulado (R$)', template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='#94a3b8'))
-                                
-                                investment_chart = cl.Plotly(name="Simulação Interativa", figure=fig, display="inline")
-                            except Exception as e:
-                                print(f"[Erro Plotly] {e}")
                                 
     # ================= SINCRONIZAÇÃO DE UI =================
     # Só abre o dashboard DEPOIS que o LLM terminar de pensar e devolver a resposta final,
@@ -208,8 +158,6 @@ async def on_message(message: cl.Message):
     
     # Prepara elementos visuais (grafico e tts)
     elements_to_show = []
-    if investment_chart:
-        elements_to_show.append(investment_chart)
     
     # Gera o Áudio da Resposta (TTS)
     try:

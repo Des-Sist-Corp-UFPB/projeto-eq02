@@ -35,46 +35,16 @@ const renderDashboardHtml = () => `
         </div>
     </div>
 
-    <!-- TELA 2: INVESTIMENTOS -->
-    <div id="dash-content-investimentos" style="display:none; width: 100%;">
-        <div class="dash-header">
-            <h1>Simulação de Investimentos</h1>
-            <div class="kpi-row">
-                <div class="kpi-card">
-                    <h3>Meses Simulados</h3>
-                    <p id="sim-meses">0</p>
-                </div>
-                <div class="kpi-card highlight">
-                    <h3>Total Investido (Bolso)</h3>
-                    <p id="sim-investido">R$ 0,00</p>
-                </div>
-                <div class="kpi-card highlight" style="background-color: rgba(52, 211, 153, 0.1); border-color: rgba(52, 211, 153, 0.3);">
-                    <h3>Montante Final (Juros)</h3>
-                    <p id="sim-montante" style="color: #34d399;">R$ 0,00</p>
-                </div>
-            </div>
-        </div>
-        <div class="charts-row">
-            <div class="chart-box" style="width: 100%; display: none;" id="boxChartInvestimentos">
-                <h3>Evolução do Patrimônio (Juros Compostos)</h3>
-                <canvas id="chartInvestimentos" style="max-height: 400px;"></canvas>
-            </div>
-            <div class="chart-box" style="width: 100%; display: none;" id="boxChartComparacao">
-                <h3 id="titleChartComparacao">Comparação de Sugestões</h3>
-                <canvas id="chartComparacao" style="max-height: 400px;"></canvas>
-            </div>
-        </div>
-    </div>
 `;
 
 document.getElementById('dashboard-root').innerHTML = renderDashboardHtml();
 
 let chartFluxoInstance = null;
 let chartCategoriesInstance = null;
-let chartInvestimentosInstance = null;
-let chartComparacaoInstance = null;
 
 const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+let lastShowState = null;
 
 async function fetchAndUpdateDashboard() {
     try {
@@ -88,60 +58,52 @@ async function fetchAndUpdateDashboard() {
         const isDashboardOnly = document.body.classList.contains('dashboard-only-layout');
         const shouldShow = data.show_dashboard || isDashboardOnly;
         
-        if (shouldShow) {
-            document.body.classList.add('show-dashboard');
-            document.getElementById('welcome-msg').style.display = 'none';
-            
-            if (data.view === 'investimentos') {
-                document.getElementById('dash-content-fluxo').style.display = 'none';
-                document.getElementById('dash-content-investimentos').style.display = 'block';
-                
-                if (data.tool_name === 'sugerir_investimentos' && data.sim_data && data.sim_data.chart_type === 'bar_comparison') {
-                    document.getElementById('boxChartInvestimentos').style.display = 'none';
-                    document.getElementById('boxChartComparacao').style.display = 'block';
-                    
-                    document.getElementById('sim-meses').innerText = data.sim_data.meses;
-                    document.getElementById('sim-investido').innerText = formatCurrency(data.sim_data.valor_investido_puro);
-                    
-                    let max_val = Math.max(...data.sim_data.valores);
-                    document.getElementById('sim-montante').innerText = formatCurrency(max_val);
-                    
-                    document.getElementById('titleChartComparacao').innerText = data.sim_data.titulo;
-                    updateChartComparacao(data.sim_data);
-                    
-                } else if (data.sim_data && data.sim_data.montante && data.sim_data.montante.length > 0) {
-                    document.getElementById('boxChartComparacao').style.display = 'none';
-                    document.getElementById('boxChartInvestimentos').style.display = 'block';
-                    
-                    let ult = data.sim_data.montante.length - 1;
-                    document.getElementById('sim-meses').innerText = data.sim_data.meses.length;
-                    document.getElementById('sim-investido').innerText = formatCurrency(data.sim_data.investido[ult]);
-                    document.getElementById('sim-montante').innerText = formatCurrency(data.sim_data.montante[ult]);
-                    updateChartInvestimentos(data.sim_data);
-                }
-            } else {
-                document.getElementById('dash-content-investimentos').style.display = 'none';
-                document.getElementById('dash-content-fluxo').style.display = 'block';
-                
-                document.getElementById('renda-val').innerText = formatCurrency(data.renda);
-                document.getElementById('gasto-val').innerText = formatCurrency(data.total_gasto);
-                document.getElementById('saldo-val').innerText = formatCurrency(data.saldo_livre);
-                
-                const saldoEl = document.getElementById('saldo-val');
-                if (data.saldo_livre < 0) {
-                    saldoEl.style.color = '#ef4444'; 
-                } else {
-                    saldoEl.style.color = '#38bdf8'; 
-                }
-                
-                updateChartsFluxo(data);
-            }
+        // --- 1. SEMPRE ATUALIZA E MOSTRA OS DADOS DE FLUXO DE CAIXA ---
+        document.getElementById('welcome-msg').style.display = 'none';
+        document.getElementById('dash-content-fluxo').style.display = 'block';
+        
+        document.getElementById('renda-val').innerText = formatCurrency(data.renda);
+        document.getElementById('gasto-val').innerText = formatCurrency(data.total_gasto);
+        document.getElementById('saldo-val').innerText = formatCurrency(data.saldo_livre);
+        
+        const saldoEl = document.getElementById('saldo-val');
+        if (data.saldo_livre < 0) {
+            saldoEl.style.color = '#ef4444'; 
         } else {
-            document.body.classList.remove('show-dashboard');
-            document.getElementById('welcome-msg').style.display = 'flex';
-            document.getElementById('dash-content-fluxo').style.display = 'none';
-            document.getElementById('dash-content-investimentos').style.display = 'none';
+            saldoEl.style.color = '#38bdf8'; 
         }
+        
+        updateChartsFluxo(data);
+
+        // --- 2. CONTROLE DE VISIBILIDADE DO PAINEL APENAS NAS TRANSIÇÕES ---
+        if (shouldShow !== lastShowState) {
+            lastShowState = shouldShow;
+            
+            if (!isDashboardOnly) {
+                const dashPane = document.getElementById('dashboard-pane');
+                const chatPane = document.getElementById('chat-pane');
+                const resizer = document.getElementById('drag-resizer');
+                const btnOpenDash = document.getElementById('btn-open-dash');
+                
+                if (dashPane && chatPane) {
+                    if (shouldShow) {
+                        // AUTO-ABRIR O PAINEL
+                        dashPane.style.display = 'block';
+                        resizer.style.display = 'block';
+                        if (btnOpenDash) btnOpenDash.style.display = 'none';
+                        chatPane.style.flex = '0 0 45%';
+                        dashPane.style.flex = '1';
+                    } else {
+                        // AUTO-FECHAR O PAINEL
+                        dashPane.style.display = 'none';
+                        resizer.style.display = 'none';
+                        if (btnOpenDash) btnOpenDash.style.display = 'block';
+                        chatPane.style.flex = '1';
+                    }
+                }
+            }
+        }
+
     } catch (e) {
         console.error('Erro ao atualizar dashboard', e);
     }
@@ -224,98 +186,7 @@ function updateChartsFluxo(data) {
     }
 }
 
-function updateChartInvestimentos(simData) {
-    const ctxInv = document.getElementById('chartInvestimentos').getContext('2d');
-    
-    if (chartInvestimentosInstance) {
-        chartInvestimentosInstance.data.labels = simData.meses.map(m => "Mês " + m);
-        chartInvestimentosInstance.data.datasets[0].data = simData.montante;
-        chartInvestimentosInstance.data.datasets[1].data = simData.investido;
-        chartInvestimentosInstance.update();
-    } else {
-        chartInvestimentosInstance = new Chart(ctxInv, {
-            type: 'line',
-            data: {
-                labels: simData.meses.map(m => "Mês " + m),
-                datasets: [
-                    {
-                        label: 'Montante com Juros',
-                        data: simData.montante,
-                        borderColor: '#34d399',
-                        backgroundColor: 'rgba(52, 211, 153, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.3
-                    },
-                    {
-                        label: 'Total Investido (Sem Juros)',
-                        data: simData.investido,
-                        borderColor: '#94a3b8',
-                        borderDash: [5, 5],
-                        borderWidth: 2,
-                        fill: false,
-                        tension: 0.3
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        ticks: { color: '#94a3b8' }, 
-                        grid: { color: 'rgba(255,255,255,0.05)' } 
-                    },
-                    x: { 
-                        ticks: { color: '#94a3b8', maxTicksLimit: 12 }, 
-                        grid: { display: false } 
-                    }
-                },
-                plugins: { legend: { labels: { color: '#e2e8f0' } } }
-            }
-        });
-    }
-}
 
-function updateChartComparacao(simData) {
-    const ctxComp = document.getElementById('chartComparacao').getContext('2d');
-    
-    if (chartComparacaoInstance) {
-        chartComparacaoInstance.data.labels = simData.labels;
-        chartComparacaoInstance.data.datasets[0].data = simData.valores;
-        chartComparacaoInstance.update();
-    } else {
-        chartComparacaoInstance = new Chart(ctxComp, {
-            type: 'bar',
-            data: {
-                labels: simData.labels,
-                datasets: [{
-                    label: 'Montante Projetado',
-                    data: simData.valores,
-                    backgroundColor: '#38bdf8',
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        ticks: { color: '#94a3b8' }, 
-                        grid: { color: 'rgba(255,255,255,0.05)' } 
-                    },
-                    x: { 
-                        ticks: { color: '#94a3b8' }, 
-                        grid: { display: false } 
-                    }
-                },
-                plugins: { legend: { display: false } }
-            }
-        });
-    }
-}
 
 // Primeira chamada imediata
 fetchAndUpdateDashboard();
