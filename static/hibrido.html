@@ -28,7 +28,7 @@
         </div>
 
         <button id="btn-close-chat" class="toggle-btn close-btn right-align" title="Fechar Chat" style="z-index: 20;">✖</button>
-        <iframe src="/chat/" id="chat-frame" style="position:relative; z-index: 15; opacity: 0; transition: opacity 0.5s;" onload="document.getElementById('chat-loading').style.display='none'; this.style.opacity='1';"></iframe>
+        <iframe src="/chat/" id="chat-frame" style="position:relative; z-index: 15; opacity: 0; transition: opacity 0.5s;"></iframe>
     </div>
 
     <!-- Divisor Central (Resizer) -->
@@ -125,6 +125,35 @@
             dashPane.style.flex = '1';
             chatPane.style.flex = `0 0 ${lastChatWidth}%`;
         });
+
+        // Verificador Inteligente do Carregamento do Chainlit
+        const chatFrame = document.getElementById('chat-frame');
+        const chatLoading = document.getElementById('chat-loading');
+        
+        const checkLoadInterval = setInterval(() => {
+            try {
+                const frameDoc = chatFrame.contentWindow.document;
+                // O Chainlit injeta todo o app dentro do #root
+                const rootEl = frameDoc.getElementById('root');
+                if (rootEl && rootEl.innerHTML.length > 500) { 
+                    // Se o root tem bastante HTML, o app React montou!
+                    chatLoading.style.display = 'none';
+                    chatFrame.style.opacity = '1';
+                    clearInterval(checkLoadInterval);
+                }
+            } catch (e) {
+                // Erros de CORS são normais se demorar a carregar ou redirecionar, ignora e tenta de novo
+            }
+        }, 300);
+
+        // Fallback de segurança: remove o loading forçadamente após 10 segundos para não prender o usuário
+        setTimeout(() => {
+            if (chatLoading.style.display !== 'none') {
+                chatLoading.style.display = 'none';
+                chatFrame.style.opacity = '1';
+                clearInterval(checkLoadInterval);
+            }
+        }, 10000);
     </script>
 </body>
 </html>
