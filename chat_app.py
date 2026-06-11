@@ -165,20 +165,21 @@ async def on_message(message: cl.Message):
     # Prepara elementos visuais (grafico e tts)
     elements_to_show = []
     
-    # Gera o Áudio da Resposta (TTS)
-    try:
-        # Pega no máximo os primeiros 4000 caracteres para evitar limite da API da OpenAI
-        tts_input = final_response[:4000]
-        tts_response = await openai_client.audio.speech.create(
-            model="tts-1",
-            voice="nova", # Voz amigável
-            input=tts_input
-        )
-        # O retorno é um HttpxBinaryResponseContent, podemos extrair os bytes com .content
-        tts_el = cl.Audio(name="Áudio do Agente", content=tts_response.content, display="inline", mime="audio/mp3")
-        elements_to_show.append(tts_el)
-    except Exception as e:
-        print(f"[Erro TTS] {e}")
+    # Gera o Áudio da Resposta (TTS) APENAS se o usuário enviou áudio original
+    if audio_text:
+        try:
+            # Pega no máximo os primeiros 2000 caracteres para evitar travar a API da OpenAI
+            tts_input = final_response[:2000]
+            tts_response = await openai_client.audio.speech.create(
+                model="tts-1",
+                voice="nova", # Voz amigável
+                input=tts_input
+            )
+            # Usa .read() para garantir o download completo dos bytes do áudio antes de montar o elemento
+            tts_el = cl.Audio(name="Áudio do Agente", content=tts_response.read(), display="inline", mime="audio/mp3")
+            elements_to_show.append(tts_el)
+        except Exception as e:
+            print(f"[Erro TTS] Não foi possível gerar áudio: {e}")
 
     msg.elements = elements_to_show
     await msg.update()
