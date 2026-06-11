@@ -38,8 +38,8 @@ def simular_investimento(valor_mensal: float, meses: int, taxa_anual_porcentagem
 def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False, cpf: str = "", meses_simulacao: int = 12) -> dict:
     """
     Retorna opções de investimentos e rentabilidades projetadas.
-    - Se aplicar_regra_inteligente for False (padrão), usará o 'valor' integral. Use isso quando o usuário disser o valor exato (ex: 500 reais).
-    - Se aplicar_regra_inteligente for True, o 'valor' representa o saldo livre total. O sistema tentará bater a meta ideal da regra 50/30/20 (20% do salário). Se o saldo for insuficiente, ele recua de forma inteligente e investe apenas 40% da sobra. Você DEVE fornecer o 'cpf' neste caso.
+    - OBRIGATÓRIO: Se o usuário disser EXPLICITAMENTE um valor para investir (ex: "quero investir 500", "tenho 500 reais para investir"), você DEVE passar aplicar_regra_inteligente=False e valor=500. Neste caso, NÃO tente adaptar ou calcular frações.
+    - OBRIGATÓRIO: SÓ passe aplicar_regra_inteligente=True se o usuário pedir algo genérico como "o que faço com o meu dinheiro que sobrou?", "sugira investimentos", "onde invisto?". Nesse caso, passe como 'valor' o saldo livre total que ele tem no fluxo de caixa atual. Você DEVE fornecer o 'cpf' neste caso.
     """
     if valor <= 0:
         return {"recomendacao": "O valor informado não é suficiente para realizar aportes."}
