@@ -101,6 +101,12 @@ async def on_message(message: cl.Message):
     final_response = "Desculpe, erro ao pensar."
     investment_chart = None
     
+    # FORÇA A ABERTURA DO DASHBOARD CASO O LLM RESPONDA DE MEMÓRIA E NÃO ACIONE A TOOL
+    from state import DASHBOARD_STATES
+    msg_lower = message.content.lower()
+    if "fluxo" in msg_lower or "caixa" in msg_lower or "gasto" in msg_lower or "mês" in msg_lower or "mes" in msg_lower:
+        DASHBOARD_STATES[cpf] = True
+        
     agent_app = await get_agent_app()
     
     # Executamos o stream e capturamos a ultima mensagem gerada pelo agente
@@ -127,31 +133,24 @@ async def on_message(message: cl.Message):
                     if name:
                         try:
                             from state import DASHBOARD_STATES
-                            if name in ["simular_investimento", "sugerir_investimentos"]:
-                                import json
+                            # Ativa o painel direito apenas para ferramentas financeiras de fluxo
+                            if name in ["analisar_fluxo_caixa", "add_transaction", "query_transactions", "update_transaction", "delete_transaction"]:
+                                DASHBOARD_STATES[cpf] = True
+                        except Exception as e:
+                            print(f"[Erro State] {e}")
+
+                        # Extrai o json de dados para os gráficos de investimento
+                        import json
+                        data = None
+                        if name in ["simular_investimento", "sugerir_investimentos"]:
+                            try:
                                 data = content
                                 if isinstance(data, str):
                                     data = json.loads(data)
                                     if isinstance(data, str):
                                         data = json.loads(data)
-                                    
-                                if isinstance(data, dict) and "dashboard_data" in data:
-                                    DASHBOARD_STATES[cpf] = {
-                                        "view": "investimentos",
-                                        "sim_data": data["dashboard_data"],
-                                        "tool_name": name
-                                    }
-                            elif name == "analisar_fluxo_caixa":
-                                has_inv = any(t in ["simular_investimento", "sugerir_investimentos"] for t in tool_names)
-                                if not has_inv:
-                                    atual = DASHBOARD_STATES.get(cpf, {})
-                                    if not isinstance(atual, dict):
-                                        DASHBOARD_STATES[cpf] = {"view": "fluxo_caixa"}
-                                    else:
-                                        atual["view"] = "fluxo_caixa"
-                                        DASHBOARD_STATES[cpf] = atual
-                        except Exception as e:
-                            print(f"[Erro State] {e}")
+                            except:
+                                pass
 
                         # Gera gráfico interativo para simulação usando os dados VINDOS DA TOOL
                         if name in ["simular_investimento", "sugerir_investimentos"] and 'data' in locals() and isinstance(data, dict) and "dashboard_data" in data:
