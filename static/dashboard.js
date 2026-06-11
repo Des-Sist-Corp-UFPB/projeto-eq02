@@ -24,6 +24,10 @@ const renderDashboardHtml = () => `
             </div>
         </div>
         <div class="charts-row">
+            <div class="chart-box" style="flex: 1 1 100%;">
+                <h3>Histórico de Saldo Mensal</h3>
+                <canvas id="chartHistorico" style="max-height: 250px;"></canvas>
+            </div>
             <div class="chart-box">
                 <h3>Composição do Fluxo de Caixa</h3>
                 <canvas id="chartFluxoCaixa"></canvas>
@@ -41,6 +45,7 @@ document.getElementById('dashboard-root').innerHTML = renderDashboardHtml();
 
 let chartFluxoInstance = null;
 let chartCategoriesInstance = null;
+let chartHistoricoInstance = null;
 
 const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
@@ -133,22 +138,30 @@ function updateChartsFluxo(data) {
         chartFluxoInstance.data.datasets[0].data = dataFluxo;
         chartFluxoInstance.update();
     } else {
+        // Doughnut com bordas vívidas e transparência
         chartFluxoInstance = new Chart(ctxFluxo, {
             type: 'doughnut',
             data: {
                 labels: ['Gastos Efetuados', 'Contas Pendentes', 'Saldo Livre'],
                 datasets: [{
                     data: dataFluxo,
-                    backgroundColor: ['#ef4444', '#f59e0b', '#34d399'],
-                    borderWidth: 0,
-                    hoverOffset: 4
+                    backgroundColor: ['rgba(239, 68, 68, 0.8)', 'rgba(245, 158, 11, 0.8)', 'rgba(16, 185, 129, 0.8)'],
+                    borderColor: ['#ef4444', '#f59e0b', '#10b981'],
+                    borderWidth: 2,
+                    hoverOffset: 10
                 }]
             },
             options: {
                 responsive: true,
+                cutout: '65%',
                 plugins: { 
-                    legend: { labels: { color: '#e2e8f0' }, position: 'bottom' },
-                    tooltip: { callbacks: { label: function(context) { return " R$ " + context.raw.toFixed(2).replace('.', ','); } } }
+                    legend: { labels: { color: '#e2e8f0', padding: 20 }, position: 'bottom' },
+                    tooltip: { 
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleColor: '#38bdf8',
+                        padding: 12,
+                        callbacks: { label: function(context) { return " R$ " + context.raw.toFixed(2).replace('.', ','); } } 
+                    }
                 }
             }
         });
@@ -163,6 +176,11 @@ function updateChartsFluxo(data) {
         chartCategoriesInstance.data.datasets[0].data = values;
         chartCategoriesInstance.update();
     } else {
+        // Criação de Gradiente para as Barras
+        const gradientBar = ctxCat.createLinearGradient(0, 0, 0, 400);
+        gradientBar.addColorStop(0, '#8b5cf6'); // Roxo brilhante
+        gradientBar.addColorStop(1, '#3b82f6'); // Azul brilhante
+
         chartCategoriesInstance = new Chart(ctxCat, {
             type: 'bar',
             data: {
@@ -170,19 +188,100 @@ function updateChartsFluxo(data) {
                 datasets: [{
                     label: 'Gasto no Mês',
                     data: values,
-                    backgroundColor: '#818cf8',
-                    borderRadius: 6
+                    backgroundColor: gradientBar,
+                    borderRadius: 8,
+                    borderWidth: 0,
+                    hoverBackgroundColor: '#c084fc'
                 }]
             },
             options: {
                 responsive: true,
                 scales: {
-                    y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                    y: { 
+                        beginAtZero: true, 
+                        ticks: { color: '#94a3b8' }, 
+                        grid: { color: 'rgba(255,255,255,0.02)' },
+                        border: { display: false }
+                    },
+                    x: { 
+                        ticks: { color: '#94a3b8' }, 
+                        grid: { display: false },
+                        border: { display: false }
+                    }
                 },
-                plugins: { legend: { display: false } }
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleColor: '#38bdf8', padding: 12 }
+                }
             }
         });
+    }
+
+    // Gráfico de Linha (Histórico Fake/Mockado para estética)
+    // Simulando 6 meses do saldo
+    const ctxHist = document.getElementById('chartHistorico').getContext('2d');
+    if (!chartHistoricoInstance) {
+        const histGradient = ctxHist.createLinearGradient(0, 0, 0, 400);
+        histGradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)'); // Roxo transparente no topo
+        histGradient.addColorStop(1, 'rgba(139, 92, 246, 0.0)'); // Transparente em baixo
+
+        // Pegando o saldo atual como base para o mock
+        let baseSaldo = valSobra;
+        let mockData = [
+            baseSaldo * 0.5, 
+            baseSaldo * 0.7, 
+            baseSaldo * 0.4, 
+            baseSaldo * 0.9, 
+            baseSaldo * 0.8, 
+            baseSaldo
+        ];
+
+        chartHistoricoInstance = new Chart(ctxHist, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Atual'],
+                datasets: [{
+                    label: 'Evolução do Saldo Livre',
+                    data: mockData,
+                    borderColor: '#a855f7', // Roxo Neon
+                    borderWidth: 3,
+                    backgroundColor: histGradient,
+                    fill: true,
+                    tension: 0.4, // Curvas suaves
+                    pointBackgroundColor: '#0b0f19',
+                    pointBorderColor: '#c084fc',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        ticks: { color: '#94a3b8' }, 
+                        grid: { color: 'rgba(255,255,255,0.02)' },
+                        border: { display: false }
+                    },
+                    x: { 
+                        ticks: { color: '#94a3b8' }, 
+                        grid: { display: false },
+                        border: { display: false }
+                    }
+                },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleColor: '#a855f7', padding: 12 }
+                }
+            }
+        });
+    } else {
+        // Apenas atualiza o último ponto do gráfico falso
+        let len = chartHistoricoInstance.data.datasets[0].data.length;
+        chartHistoricoInstance.data.datasets[0].data[len-1] = valSobra;
+        chartHistoricoInstance.update();
     }
 }
 
