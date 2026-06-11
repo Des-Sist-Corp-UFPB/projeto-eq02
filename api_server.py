@@ -122,22 +122,6 @@ def dashboard_data(request: Request):
         }
     }
 
-@app.get("/api/debug_state")
-def debug_state(request: Request):
-    cpf = request.cookies.get("auth_cpf")
-    from state import DASHBOARD_STATES
-    try:
-        with open("debug_dashboard.log", "r") as f:
-            logs = f.readlines()[-20:]
-    except:
-        logs = ["Arquivo de log nao encontrado"]
-        
-    return {
-        "cpf_logado": cpf,
-        "dashboard_states_completo": DASHBOARD_STATES,
-        "state_do_usuario": DASHBOARD_STATES.get(cpf, "Nao existe"),
-        "logs_recentes": logs
-    }
 
 @app.get("/ping")
 def ping():
@@ -147,26 +131,6 @@ def ping():
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     }
 
-@app.get("/debug_db")
-def debug_db():
-    try:
-        # Puxa os nomes de todas as tabelas criadas pelo usuário (no schema public)
-        tables_query = execute_query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-        tables = [t["table_name"] for t in tables_query] if tables_query else []
-        
-        # Puxa as informações específicas de transações, se existir
-        cols = execute_query("SELECT column_name FROM information_schema.columns WHERE table_name = 'transactions'")
-        col_names = [c["column_name"] for c in cols] if cols else []
-        
-        trans = execute_query("SELECT id, description, status, transaction_date FROM transactions LIMIT 5")
-        
-        return {
-            "todas_as_tabelas_no_banco": tables,
-            "colunas_da_tabela_transactions": col_names,
-            "dados_de_exemplo_transactions": trans
-        }
-    except Exception as e:
-        return {"error": str(e)}
 
 @app.post("/login")
 def login(req: LoginRequest, response: Response):

@@ -140,19 +140,18 @@ async def on_message(message: cl.Message):
                     if name:
                         try:
                             from state import DASHBOARD_STATES
-                            if name in ["simular_investimento", "sugerir_investimentos"]:
+                            if "simular" in name.lower() or "sugerir" in name.lower():
                                 DASHBOARD_STATES[cpf] = False
+                            elif "transa" in name.lower() or "fluxo" in name.lower() or "goal" in name.lower() or "client" in name.lower():
+                                DASHBOARD_STATES[cpf] = True
                             # (Abertura do fluxo de caixa movida para o final para sincronizar com a IA)
                         except Exception as e:
                             print(f"[Erro State] {e}")
                                 
     # ================= SINCRONIZAÇÃO DE UI =================
-    # Só abre o dashboard DEPOIS que o LLM terminar de pensar e devolver a resposta final,
-    # garantindo que o gráfico e o texto apareçam "meio que juntos" para o usuário.
-    if "fluxo" in msg_lower or "caixa" in msg_lower or "gasto" in msg_lower or "mês" in msg_lower or "mes" in msg_lower:
-        from state import DASHBOARD_STATES
-        DASHBOARD_STATES[cpf] = True
-
+    # Só abre o dashboard DEPOIS que o LLM terminar de pensar e devolver a resposta final.
+    # O controle agora é 100% feito interceptando as tools que a IA escolheu usar.
+    
     # Atualiza a interface com a resposta em texto usando efeito de digitação (Streaming Simulado)
     import asyncio
     chunk_size = 4
