@@ -3,23 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinancIA's - Painel Híbrido</title>
+    <title>FinancIA's - Painel Interativo</title>
     <link rel="stylesheet" href="/static/dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="hibrido-layout">
     
+    <!-- Botão Flutuante para Reabrir o Chat (quando escondido) -->
+    <button id="btn-open-chat" class="toggle-btn floating-btn left-btn" title="Abrir Chat" style="display: none;">
+        💬 Abrir Chat
+    </button>
+
     <!-- Lado Esquerdo: CHAT -->
-    <div class="chat-container">
+    <div class="chat-container" id="chat-pane">
+        <button id="btn-close-chat" class="toggle-btn close-btn right-align" title="Fechar Chat">✖</button>
         <iframe src="/chat/" id="chat-frame"></iframe>
     </div>
 
+    <!-- Divisor Central (Resizer) -->
+    <div class="resizer" id="drag-resizer"></div>
+
+    <!-- Botão Flutuante para Reabrir o Dashboard (quando escondido) -->
+    <button id="btn-open-dash" class="toggle-btn floating-btn right-btn" title="Abrir Dashboard" style="display: none;">
+        📊 Abrir Dashboard
+    </button>
+
     <!-- Lado Direito: DASHBOARD -->
-    <div class="dashboard-container">
+    <div class="dashboard-container" id="dashboard-pane">
+        <button id="btn-close-dash" class="toggle-btn close-btn left-align" title="Fechar Dashboard">✖</button>
         <div id="dashboard-root"></div>
     </div>
 
     <script src="/static/dashboard.js"></script>
+    <script>
+        // Lógica de Redimensionamento (Resizer) e Toggle
+        const resizer = document.getElementById('drag-resizer');
+        const chatPane = document.getElementById('chat-pane');
+        const dashPane = document.getElementById('dashboard-pane');
+        
+        const btnCloseChat = document.getElementById('btn-close-chat');
+        const btnCloseDash = document.getElementById('btn-close-dash');
+        const btnOpenChat = document.getElementById('btn-open-chat');
+        const btnOpenDash = document.getElementById('btn-open-dash');
+
+        let isResizing = false;
+        let lastChatWidth = 45; // Porcentagem padrao
+        
+        // --- DRAG TO RESIZE ---
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+            chatPane.style.pointerEvents = 'none'; // Evita que o iframe engula o evento do mouse
+            dashPane.style.pointerEvents = 'none';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            // Calcula a largura baseada na posicao do mouse
+            const containerWidth = document.body.clientWidth;
+            let newChatWidth = (e.clientX / containerWidth) * 100;
+            
+            // Limites mínimos para não sumir totalmente arrastando
+            if (newChatWidth < 10) newChatWidth = 10;
+            if (newChatWidth > 90) newChatWidth = 90;
+            
+            chatPane.style.flex = `0 0 ${newChatWidth}%`;
+            dashPane.style.flex = `1`;
+            lastChatWidth = newChatWidth; // Salva para quando reabrir
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = 'default';
+                chatPane.style.pointerEvents = 'auto';
+                dashPane.style.pointerEvents = 'auto';
+            }
+        });
+
+        // --- TOGGLE PANES (ABRIR/FECHAR) ---
+        btnCloseChat.addEventListener('click', () => {
+            chatPane.style.display = 'none';
+            resizer.style.display = 'none';
+            btnOpenChat.style.display = 'block';
+            dashPane.style.flex = '1';
+        });
+
+        btnOpenChat.addEventListener('click', () => {
+            chatPane.style.display = 'flex';
+            resizer.style.display = 'block';
+            btnOpenChat.style.display = 'none';
+            chatPane.style.flex = `0 0 ${lastChatWidth}%`;
+            dashPane.style.flex = '1';
+        });
+
+        btnCloseDash.addEventListener('click', () => {
+            dashPane.style.display = 'none';
+            resizer.style.display = 'none';
+            btnOpenDash.style.display = 'block';
+            chatPane.style.flex = '1';
+            
+            // Força o state do backend a saber que está fechado?
+            // O frontend apenas esconde o visual.
+        });
+
+        btnOpenDash.addEventListener('click', () => {
+            dashPane.style.display = 'block';
+            resizer.style.display = 'block';
+            btnOpenDash.style.display = 'none';
+            dashPane.style.flex = '1';
+            chatPane.style.flex = `0 0 ${lastChatWidth}%`;
+        });
+    </script>
 </body>
 </html>
