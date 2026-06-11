@@ -96,7 +96,7 @@ async def on_message(message: cl.Message):
     # Forçar a invocação da tool de investimentos para evitar respostas de memória
     msg_lower_check = final_content.lower()
     if "invest" in msg_lower_check or "simula" in msg_lower_check or "suger" in msg_lower_check or "opções" in msg_lower_check:
-        final_content += "\n\n[SISTEMA]: OBRIGATÓRIO: Você DEVE invocar a ferramenta 'sugerir_investimentos' ou 'simular_investimento' agora mesmo para gerar os dados do gráfico para o usuário. É ESTRITAMENTE PROIBIDO responder de memória ou pular o uso da ferramenta!"
+        final_content += "\n\n[SISTEMA]: OBRIGATÓRIO: Você DEVE invocar a ferramenta 'sugerir_investimentos' ou 'simular_investimento' agora mesmo. É ESTRITAMENTE PROIBIDO responder de memória. Após receber os dados da tool, gere a sua resposta de texto para o usuário. ATENÇÃO: NUNCA tente gerar gráficos em Markdown, base64 ou desenhar imagens. O gráfico será renderizado automaticamente pelo frontend em Plotly. Foque APENAS no texto descritivo."
             
     # Prepara a mensagem visual do Chainlit
     msg = cl.Message(content="")
@@ -150,15 +150,25 @@ async def on_message(message: cl.Message):
 
                         # Extrai o json de dados para os gráficos de investimento
                         import json
+                        import ast
                         data = None
                         if name in ["simular_investimento", "sugerir_investimentos"]:
                             try:
                                 data = content
                                 if isinstance(data, str):
-                                    data = json.loads(data)
-                                    if isinstance(data, str):
+                                    try:
                                         data = json.loads(data)
-                            except:
+                                    except json.JSONDecodeError:
+                                        # LangGraph transforma dicts em strings com aspas simples, json.loads falha.
+                                        data = ast.literal_eval(data)
+                                    
+                                    if isinstance(data, str):
+                                        try:
+                                            data = json.loads(data)
+                                        except json.JSONDecodeError:
+                                            data = ast.literal_eval(data)
+                            except Exception as parse_e:
+                                print(f"[Erro Parsing Tool Content] {parse_e}")
                                 pass
 
                         # Gera gráfico interativo para simulação usando os dados VINDOS DA TOOL

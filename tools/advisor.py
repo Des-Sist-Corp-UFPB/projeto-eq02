@@ -105,7 +105,7 @@ def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False,
     return {
         "analise_estrategica": analise_estrategica,
         "opcoes_sugeridas": opcoes,
-        "dica": "O dashboard já desenhou as simulações em barras para o cliente comparar. Use os dados acima para enriquecer sua explicação.",
+        "dica": "ATENÇÃO: Foque apenas em explicar textualmente as opções. O gráfico é gerado automaticamente pelo frontend. NUNCA gere markdown de imagens ou base64.",
         "dashboard_data": {
             "chart_type": "bar_comparison",
             "titulo": f"Comparação de Sugestões (Projeção para {meses_simulacao} meses)",
