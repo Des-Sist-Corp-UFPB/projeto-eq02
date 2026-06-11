@@ -106,11 +106,15 @@ async def on_message(message: cl.Message):
     final_response = "Desculpe, erro ao pensar."
     investment_chart = None
     
-    # FORÇA A ABERTURA DO DASHBOARD CASO O LLM RESPONDA DE MEMÓRIA E NÃO ACIONE A TOOL
+    # Controle da visibilidade do painel direito (Dashboard)
     from state import DASHBOARD_STATES
     msg_lower = message.content.lower()
-    if "fluxo" in msg_lower or "caixa" in msg_lower or "gasto" in msg_lower or "mês" in msg_lower or "mes" in msg_lower:
-        DASHBOARD_STATES[cpf] = True
+    
+    # Se pedir investimentos, esconde o dashboard imediatamente para o chat ficar em tela cheia enquanto o LLM pensa
+    if "invest" in msg_lower or "simula" in msg_lower or "suger" in msg_lower or "opções" in msg_lower:
+        DASHBOARD_STATES[cpf] = False
+        
+    # (Abertura do fluxo de caixa foi movida para o final do código para sincronizar com a mensagem)
         
     agent_app = await get_agent_app()
     
@@ -138,9 +142,9 @@ async def on_message(message: cl.Message):
                     if name:
                         try:
                             from state import DASHBOARD_STATES
-                            # Ativa o painel direito apenas para ferramentas financeiras de fluxo
-                            if name in ["analisar_fluxo_caixa", "add_transaction", "query_transactions", "update_transaction", "delete_transaction"]:
-                                DASHBOARD_STATES[cpf] = True
+                            if name in ["simular_investimento", "sugerir_investimentos"]:
+                                DASHBOARD_STATES[cpf] = False
+                            # (Abertura do fluxo de caixa movida para o final para sincronizar com a IA)
                         except Exception as e:
                             print(f"[Erro State] {e}")
 
@@ -181,6 +185,14 @@ async def on_message(message: cl.Message):
                                 investment_chart = cl.Plotly(name="Simulação Interativa", figure=fig, display="inline")
                             except Exception as e:
                                 print(f"[Erro Plotly] {e}")
+                                
+    # ================= SINCRONIZAÇÃO DE UI =================
+    # Só abre o dashboard DEPOIS que o LLM terminar de pensar e devolver a resposta final,
+    # garantindo que o gráfico e o texto apareçam "meio que juntos" para o usuário.
+    if "fluxo" in msg_lower or "caixa" in msg_lower or "gasto" in msg_lower or "mês" in msg_lower or "mes" in msg_lower:
+        from state import DASHBOARD_STATES
+        DASHBOARD_STATES[cpf] = True
+
     # Atualiza a interface com a resposta em texto
     msg.content = final_response
     
