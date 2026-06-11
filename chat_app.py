@@ -36,31 +36,34 @@ async def on_chat_start():
     cl.user_session.set("thread_id", thread_id)
     cl.user_session.set("cpf", user.identifier)
     
-    msg = cl.Message(content=f"Conectando ao banco de dados...")
+    # Envia uma mensagem de espera mostrando o CPF para debug
+    msg = cl.Message(content=f"Aguarde, conectando ao FinancIA's e buscando seus dados (CPF Logado: {user.identifier})...")
     await msg.send()
     
-    # 🚀 OTIMIZAÇÃO: Busca direta no banco de dados para Saudação Instantânea (Evita chamada lenta de IA no carregamento)
-    try:
-        from tools.db import execute_query
-        client = execute_query("SELECT nome, renda_total FROM clients WHERE cpf = %s", (user.identifier,))
-        if client:
-            nome = client[0].get("nome", "Cliente")
-            renda = client[0].get("renda_total", 0.0)
-            if renda <= 0:
-                final_response = f"Olá, **{nome}**! Sou o seu novo Assistente Financeiro IA. 🧠\n\nPara começarmos a organizar sua vida e liberar o Dashboard, qual é a sua **renda mensal** atual?"
-            else:
-                final_response = f"Olá de volta, **{nome}**! Seu painel já está pronto ao lado. Como posso ajudar com suas finanças hoje?"
-        else:
-            final_response = "Olá! Bem-vindo ao FinancIA's. Não encontrei seu cadastro completo. Qual a sua renda mensal?"
-    except Exception as e:
-        final_response = "Olá! Como posso te ajudar hoje?"
-
+    # Prompt inicial oculto para forçar o agente a buscar o CPF e se apresentar
+    initial_prompt = """O usuário acabou de abrir o chat. 
+Aja imediatamente: Chame a ferramenta `obter_roteiro_atendimento` usando o CPF do cliente.
+Siga rigorosamente os passos que ela te devolver para gerar a sua primeira mensagem de boas-vindas."""
+    
+    config = {"configurable": {"thread_id": thread_id}}
+    
+    final_response = "Erro ao inicializar o agente."
+    
+    # Inicializa o agente assíncrono (carrega as tools do MCP)
+    agent_app = await get_agent_app()
+    
+    # Executa o LangGraph
+    async for event in agent_app.astream({"messages": [HumanMessage(content=initial_prompt)], "cpf_ativo": user.identifier}, config, stream_mode="updates"):
+        for node, update in event.items():
+            if node == "chatbot":
+                chatbot_msg = update["messages"][-1]
+                if chatbot_msg.content:
+                    final_response = chatbot_msg.content
+                    
+                    
+    # Atualiza a mensagem de espera com a saudação oficial do agente
     msg.content = final_response
     await msg.update()
-
-    # Pré-aquece o Agente MCP silenciosamente em background para que o primeiro envio de mensagem seja rápido
-    import asyncio
-    asyncio.create_task(get_agent_app())
 
 @cl.on_message
 async def on_message(message: cl.Message):

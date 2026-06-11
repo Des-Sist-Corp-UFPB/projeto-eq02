@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +9,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body class="hibrido-layout">
-    
+
     <!-- Botão Flutuante para Reabrir o Chat (quando escondido) -->
     <button id="btn-open-chat" class="toggle-btn floating-btn left-btn" title="Abrir Chat" style="display: none;">
         💬 Abrir Chat
@@ -17,18 +19,31 @@
 
     <!-- Lado Esquerdo: CHAT -->
     <div class="chat-container" id="chat-pane" style="position: relative;">
-        
+
         <!-- Splash Screen de Carregamento para o Chainlit -->
-        <div id="chat-loading" style="position: absolute; top:0; left:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; background:#0b0f19; color:#38bdf8; z-index: 10; font-family: 'Inter', sans-serif; flex-direction: column;">
-            <div style="width: 40px; height: 40px; border: 4px solid rgba(56, 189, 248, 0.2); border-top: 4px solid #38bdf8; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+        <div id="chat-loading"
+            style="position: absolute; top:0; left:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; background:#0b0f19; color:#38bdf8; z-index: 10; font-family: 'Inter', sans-serif; flex-direction: column;">
+            <div
+                style="width: 40px; height: 40px; border: 4px solid rgba(56, 189, 248, 0.2); border-top: 4px solid #38bdf8; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;">
+            </div>
             <h3 style="margin: 0; font-weight: 600; letter-spacing: 1px;">Conectando à IA...</h3>
             <style>
-                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                @keyframes spin {
+                    0% {
+                        transform: rotate(0deg);
+                    }
+
+                    100% {
+                        transform: rotate(360deg);
+                    }
+                }
             </style>
         </div>
 
-        <button id="btn-close-chat" class="toggle-btn close-btn right-align" title="Fechar Chat" style="z-index: 20;">✖</button>
-        <iframe src="/chat/" id="chat-frame" style="position:relative; z-index: 15; opacity: 0; transition: opacity 0.5s;"></iframe>
+        <button id="btn-close-chat" class="toggle-btn close-btn right-align" title="Fechar Chat"
+            style="z-index: 20;">✖</button>
+        <iframe src="/chat/" id="chat-frame"
+            style="position:relative; z-index: 15; opacity: 0; transition: opacity 0.5s;"></iframe>
     </div>
 
     <!-- Divisor Central (Resizer) -->
@@ -51,7 +66,7 @@
         const resizer = document.getElementById('drag-resizer');
         const chatPane = document.getElementById('chat-pane');
         const dashPane = document.getElementById('dashboard-pane');
-        
+
         const btnCloseChat = document.getElementById('btn-close-chat');
         const btnCloseDash = document.getElementById('btn-close-dash');
         const btnOpenChat = document.getElementById('btn-open-chat');
@@ -59,7 +74,7 @@
 
         let isResizing = false;
         let lastChatWidth = 45; // Porcentagem padrao
-        
+
         // --- DRAG TO RESIZE ---
         resizer.addEventListener('mousedown', (e) => {
             isResizing = true;
@@ -73,11 +88,11 @@
             // Calcula a largura baseada na posicao do mouse
             const containerWidth = document.body.clientWidth;
             let newChatWidth = (e.clientX / containerWidth) * 100;
-            
+
             // Limites mínimos para não sumir totalmente arrastando
             if (newChatWidth < 10) newChatWidth = 10;
             if (newChatWidth > 90) newChatWidth = 90;
-            
+
             chatPane.style.flex = `0 0 ${newChatWidth}%`;
             dashPane.style.flex = `1`;
             lastChatWidth = newChatWidth; // Salva para quando reabrir
@@ -113,7 +128,7 @@
             resizer.style.display = 'none';
             btnOpenDash.style.display = 'block';
             chatPane.style.flex = '1';
-            
+
             // Força o state do backend a saber que está fechado?
             // O frontend apenas esconde o visual.
         });
@@ -129,16 +144,17 @@
         // Verificador Inteligente do Carregamento do Chainlit
         const chatFrame = document.getElementById('chat-frame');
         const chatLoading = document.getElementById('chat-loading');
-        
+
         const checkLoadInterval = setInterval(() => {
             try {
                 const frameDoc = chatFrame.contentWindow.document;
                 // O Chainlit injeta todo o app dentro do #root
                 const rootEl = frameDoc.getElementById('root');
-                if (rootEl && rootEl.innerHTML.length > 500) { 
+                if (rootEl && rootEl.innerHTML.length > 500) {
                     // Se o root tem bastante HTML, o app React montou!
                     chatLoading.style.display = 'none';
                     chatFrame.style.opacity = '1';
+                    window.isChainlitLoaded = true;
                     clearInterval(checkLoadInterval);
                 }
             } catch (e) {
@@ -151,9 +167,11 @@
             if (chatLoading.style.display !== 'none') {
                 chatLoading.style.display = 'none';
                 chatFrame.style.opacity = '1';
+                window.isChainlitLoaded = true;
                 clearInterval(checkLoadInterval);
             }
         }, 10000);
     </script>
 </body>
+
 </html>

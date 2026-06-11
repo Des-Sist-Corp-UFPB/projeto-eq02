@@ -26,15 +26,21 @@ const renderDashboardHtml = () => `
         <div class="charts-row">
             <div class="chart-box">
                 <h3>Composição do Fluxo de Caixa</h3>
-                <canvas id="chartFluxoCaixa"></canvas>
+                <div style="position: relative; height: 250px; width: 100%; display: flex; justify-content: center;">
+                    <canvas id="chartFluxoCaixa"></canvas>
+                </div>
             </div>
-            <div class="chart-box">
+            <div class="chart-box" style="display: flex; flex-direction: column;">
                 <h3>Gastos por Categoria</h3>
-                <canvas id="chartCategories"></canvas>
+                <div style="position: relative; flex: 1; min-height: 250px; width: 100%;">
+                    <canvas id="chartCategories"></canvas>
+                </div>
             </div>
-            <div class="chart-box" style="flex: 1 1 100%;">
+            <div class="chart-box" style="flex: 1 1 100%; display: flex; flex-direction: column;">
                 <h3>Histórico de Saldo Mensal</h3>
-                <canvas id="chartHistorico" style="max-height: 250px;"></canvas>
+                <div style="position: relative; flex: 1; min-height: 250px; width: 100%;">
+                    <canvas id="chartHistorico"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -102,10 +108,17 @@ async function fetchAndUpdateDashboard() {
                         // AUTO-FECHAR O PAINEL
                         dashPane.style.display = 'none';
                         resizer.style.display = 'none';
-                        if (btnOpenDash) btnOpenDash.style.display = 'block';
                         chatPane.style.flex = '1';
                     }
                 }
+            }
+        }
+        
+        // Mantém a avaliação do botão Abrir Dashboard contínua caso a variável de carregamento mude
+        if (!shouldShow && !isDashboardOnly) {
+            const btnOpenDash = document.getElementById('btn-open-dash');
+            if (btnOpenDash) {
+                btnOpenDash.style.display = window.isChainlitLoaded ? 'block' : 'none';
             }
         }
 
@@ -196,6 +209,7 @@ function updateChartsFluxo(data) {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 scales: {
                     y: { 
                         beginAtZero: true, 
