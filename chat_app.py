@@ -93,6 +93,11 @@ async def on_message(message: cl.Message):
         else:
             final_content = audio_text
             
+    # Forçar a invocação da tool de investimentos para evitar respostas de memória
+    msg_lower_check = final_content.lower()
+    if "invest" in msg_lower_check or "simula" in msg_lower_check or "suger" in msg_lower_check or "opções" in msg_lower_check:
+        final_content += "\n\n[SISTEMA]: OBRIGATÓRIO: Você DEVE invocar a ferramenta 'sugerir_investimentos' ou 'simular_investimento' agora mesmo para gerar os dados do gráfico para o usuário. É ESTRITAMENTE PROIBIDO responder de memória ou pular o uso da ferramenta!"
+            
     # Prepara a mensagem visual do Chainlit
     msg = cl.Message(content="")
     await msg.send()
