@@ -35,10 +35,38 @@ def simular_investimento(valor_mensal: float, meses: int, taxa_anual_porcentagem
     }
 
 @mcp.tool()
-def sugerir_investimentos(valor_mensal: float, meses_simulacao: int = 12) -> dict:
-    """Retorna opções de investimentos e rentabilidades baseadas no valor de aporte mensal e simulações para um determinado prazo (default 12 meses)."""
-    if valor_mensal <= 0:
-        return {"recomendacao": "No momento, o foco deve ser organizar as contas e sair do vermelho antes de investir."}
+def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False, cpf: str = "", meses_simulacao: int = 12) -> dict:
+    """
+    Retorna opções de investimentos e rentabilidades projetadas.
+    - Se aplicar_regra_inteligente for False (padrão), usará o 'valor' integral. Use isso quando o usuário disser o valor exato (ex: 500 reais).
+    - Se aplicar_regra_inteligente for True, o 'valor' representa o saldo livre total. O sistema tentará bater a meta ideal da regra 50/30/20 (20% do salário). Se o saldo for insuficiente, ele recua de forma inteligente e investe apenas 40% da sobra. Você DEVE fornecer o 'cpf' neste caso.
+    """
+    if valor <= 0:
+        return {"recomendacao": "O valor informado não é suficiente para realizar aportes."}
+        
+    if aplicar_regra_inteligente:
+        renda = 0.0
+        if cpf:
+            client = _get_client_internal(cpf)
+            if client:
+                renda = float(client.get("renda_total", 0.0))
+                
+        meta_ideal = renda * 0.20
+        
+        if renda > 0 and valor >= meta_ideal:
+            valor_mensal = meta_ideal
+            reserva = valor - valor_mensal
+            analise_estrategica = f"Seu salário é R$ {renda:.2f} e você tem R$ {valor:.2f} livres. A meta (20% da renda) é R$ {meta_ideal:.2f}. Como você tem folga, foquei a simulação na meta ideal e ainda te deixei R$ {reserva:.2f} para imprevistos e lazer."
+        else:
+            valor_mensal = valor * 0.40
+            reserva = valor * 0.60
+            if renda > 0:
+                analise_estrategica = f"A meta ideal seria R$ {meta_ideal:.2f} (20% da sua renda), mas como seu saldo livre atual é R$ {valor:.2f}, precisei adaptar a estratégia. Reservei 60% (R$ {reserva:.2f}) para o seu dia a dia e foquei em investir os 40% restantes (R$ {valor_mensal:.2f})."
+            else:
+                analise_estrategica = f"Dos R$ {valor:.2f} livres no mês, reservei inteligentemente 60% (R$ {reserva:.2f}) para imprevistos. As simulações abaixo usam os 40% restantes (R$ {valor_mensal:.2f}) para investimentos."
+    else:
+        valor_mensal = valor
+        analise_estrategica = f"Com aportes fixos de R$ {valor_mensal:.2f} por {meses_simulacao} meses, eis as projeções para algumas carteiras de investimentos:"
     
     if valor_mensal <= 500:
         opcoes = [
@@ -75,7 +103,7 @@ def sugerir_investimentos(valor_mensal: float, meses_simulacao: int = 12) -> dic
         del op["taxa_anual"]
         
     return {
-        "analise": f"Com aportes de R$ {valor_mensal:.2f} por {meses_simulacao} meses, eis as projeções para algumas carteiras de investimentos:",
+        "analise_estrategica": analise_estrategica,
         "opcoes_sugeridas": opcoes,
         "dica": "O dashboard já desenhou as simulações em barras para o cliente comparar. Use os dados acima para enriquecer sua explicação.",
         "dashboard_data": {
