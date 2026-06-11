@@ -24,10 +24,6 @@ const renderDashboardHtml = () => `
             </div>
         </div>
         <div class="charts-row">
-            <div class="chart-box" style="flex: 1 1 100%;">
-                <h3>Histórico de Saldo Mensal</h3>
-                <canvas id="chartHistorico" style="max-height: 250px;"></canvas>
-            </div>
             <div class="chart-box">
                 <h3>Composição do Fluxo de Caixa</h3>
                 <canvas id="chartFluxoCaixa"></canvas>
@@ -35,6 +31,10 @@ const renderDashboardHtml = () => `
             <div class="chart-box">
                 <h3>Gastos por Categoria</h3>
                 <canvas id="chartCategories"></canvas>
+            </div>
+            <div class="chart-box" style="flex: 1 1 100%;">
+                <h3>Histórico de Saldo Mensal</h3>
+                <canvas id="chartHistorico" style="max-height: 250px;"></canvas>
             </div>
         </div>
     </div>
@@ -145,8 +145,8 @@ function updateChartsFluxo(data) {
                 labels: ['Gastos Efetuados', 'Contas Pendentes', 'Saldo Livre'],
                 datasets: [{
                     data: dataFluxo,
-                    backgroundColor: ['rgba(239, 68, 68, 0.8)', 'rgba(245, 158, 11, 0.8)', 'rgba(16, 185, 129, 0.8)'],
-                    borderColor: ['#ef4444', '#f59e0b', '#10b981'],
+                    backgroundColor: ['rgba(244, 63, 94, 0.8)', 'rgba(251, 191, 36, 0.8)', 'rgba(45, 212, 191, 0.8)'],
+                    borderColor: ['#f43f5e', '#fbbf24', '#2dd4bf'],
                     borderWidth: 2,
                     hoverOffset: 10
                 }]

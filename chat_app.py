@@ -153,8 +153,15 @@ async def on_message(message: cl.Message):
         from state import DASHBOARD_STATES
         DASHBOARD_STATES[cpf] = True
 
-    # Atualiza a interface com a resposta em texto
-    msg.content = final_response
+    # Atualiza a interface com a resposta em texto usando efeito de digitação (Streaming Simulado)
+    import asyncio
+    chunk_size = 4
+    for i in range(0, len(final_response), chunk_size):
+        chunk = final_response[i:i+chunk_size]
+        await msg.stream_token(chunk)
+        await asyncio.sleep(0.01) # velocidade rápida de digitação
+        
+    msg.content = final_response # Garante que o texto final completo esteja salvo na variável
     
     # Prepara elementos visuais (grafico e tts)
     elements_to_show = []
