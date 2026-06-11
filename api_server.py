@@ -91,9 +91,11 @@ def dashboard_data(request: Request):
     
     view_ativa = "fluxo_caixa"
     sim_data = {}
+    tool_name = ""
     if isinstance(state_obj, dict):
         view_ativa = state_obj.get("view", "fluxo_caixa")
         sim_data = state_obj.get("sim_data", {})
+        tool_name = state_obj.get("tool_name", "")
     
     # O api_server agora é puramente um repassador de dados. Toda a matemática financeira mora na Tool.
     from tools.advisor import analisar_fluxo_caixa
@@ -107,6 +109,7 @@ def dashboard_data(request: Request):
     return {
         "show_dashboard": show_dashboard,
         "view": view_ativa,
+        "tool_name": tool_name,
         "sim_data": sim_data,
         "renda": dados_fluxo["renda_mensal"],
         "total_gasto": dados_fluxo["total_gasto_mes_atual"],

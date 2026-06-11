@@ -150,9 +150,16 @@ async function fetchAndUpdateDashboard() {
 function updateChartsFluxo(data) {
     const ctxFluxo = document.getElementById('chartFluxoCaixa').getContext('2d');
     
-    let valGasto = data.resumo_fluxo['Gastos Efetuados'];
-    let valPendente = data.resumo_fluxo['Gastos Pendentes'];
-    let valSobra = data.resumo_fluxo['Saldo Livre'];
+    let valGasto = 0, valPendente = 0, valSobra = 0;
+    if (data.resumo_fluxo) {
+        valGasto = data.resumo_fluxo['Gastos Efetuados'] || 0;
+        valPendente = data.resumo_fluxo['Gastos Pendentes'] || 0;
+        valSobra = data.resumo_fluxo['Saldo Livre'] || 0;
+    } else if (data.regra_50_30_20) {
+        valGasto = data.regra_50_30_20['Necessidades (50%)'] || 0;
+        valPendente = data.regra_50_30_20['Desejos (30%)'] || 0;
+        valSobra = data.regra_50_30_20['Investimentos (20%)'] || 0;
+    }
     
     if (valGasto === 0 && valPendente === 0 && valSobra <= 0) {
         valSobra = 0.01; 

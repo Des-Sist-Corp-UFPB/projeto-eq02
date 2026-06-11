@@ -48,6 +48,7 @@ def obter_roteiro_atendimento(cpf: str) -> str:
         B. Use query_transactions com status='pending' para buscar proativamente contas a pagar e avisar ao usuário quantos dias faltam para a data de vencimento (transaction_date).
         C. SEMPRE que o usuário adicionar um novo gasto ou conta a pagar, você DEVE utilizar analisar_fluxo_caixa para checar o saldo restante da renda e dar recomendações cruzadas (ex: 'Cuidado, restam poucos dias pro fim do mês e já comprometeu X%').
         D. Sempre que exibir a análise do fluxo de caixa e houver um 'saldo livre projetado' positivo, você DEVE utilizar a ferramenta `sugerir_investimentos` passando o saldo restante para ver recomendações curtas (gatilhos). Dê essas dicas ao usuário e deixe claro que, se ele quiser, você pode explicar mais a fundo.
+        E. INTERFACE E MEMÓRIA: É ESTRITAMENTE PROIBIDO responder com valores financeiros "de memória" (baseado em mensagens anteriores do chat) ou tentar deduzir resultados matemáticos. A interface do sistema (Dashboard) DEPENDE que você invoque as ferramentas (tools) para que a tela do usuário seja atualizada. Se você não invocar a ferramenta e responder de cabeça, a tela do usuário vai quebrar e não vai desenhar os gráficos, além de ser uma péssima prática! SEMPRE INVOQUE AS TOOLS!
         """
         
     if renda == 0.0:
