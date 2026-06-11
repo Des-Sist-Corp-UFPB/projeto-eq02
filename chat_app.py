@@ -116,19 +116,24 @@ async def on_message(message: cl.Message):
                     pass # Deixamos a interceptação real para o nó 'tools' onde o retorno chega
                         
             if node == "tools":
-                tool_names = [getattr(m, "name", "") for m in update["messages"]]
-                for tool_msg in update["messages"]:
-                    name = getattr(tool_msg, "name", "")
+                tool_names = []
+                for m in update.get("messages", []):
+                    tool_names.append(getattr(m, "name", m.get("name", "")) if isinstance(m, dict) else getattr(m, "name", ""))
+                    
+                for tool_msg in update.get("messages", []):
+                    name = getattr(tool_msg, "name", tool_msg.get("name", "")) if isinstance(tool_msg, dict) else getattr(tool_msg, "name", "")
+                    content = tool_msg.get("content", "") if isinstance(tool_msg, dict) else getattr(tool_msg, "content", "")
+                    
                     if name:
                         try:
                             from state import DASHBOARD_STATES
                             if name in ["simular_investimento", "sugerir_investimentos"]:
                                 import json
-                                # O conteúdo retornado pela tool do MCP é uma string
-                                data = json.loads(tool_msg.content)
-                                # Se veio como string JSON serializada duas vezes, fazemos fallback
+                                data = content
                                 if isinstance(data, str):
                                     data = json.loads(data)
+                                    if isinstance(data, str):
+                                        data = json.loads(data)
                                     
                                 if isinstance(data, dict) and "dashboard_data" in data:
                                     DASHBOARD_STATES[cpf] = {
@@ -137,20 +142,16 @@ async def on_message(message: cl.Message):
                                         "tool_name": name
                                     }
                             elif name == "analisar_fluxo_caixa":
-                                # Só volta para fluxo de caixa se não rolou investimento junto
                                 has_inv = any(t in ["simular_investimento", "sugerir_investimentos"] for t in tool_names)
                                 if not has_inv:
-                                    atual = DASHBOARD_STATES.get(cpf)
+                                    atual = DASHBOARD_STATES.get(cpf, {})
                                     if not isinstance(atual, dict):
                                         DASHBOARD_STATES[cpf] = {"view": "fluxo_caixa"}
                                     else:
                                         atual["view"] = "fluxo_caixa"
                                         DASHBOARD_STATES[cpf] = atual
                         except Exception as e:
-                            import traceback
                             print(f"[Erro State] {e}")
-                            with open("debug_dashboard.log", "a") as f:
-                                f.write(f"CHAT_APP_ERROR: {e}\\n{traceback.format_exc()}\\n")
 
                         # Gera gráfico interativo para simulação usando os dados VINDOS DA TOOL
                         if name in ["simular_investimento", "sugerir_investimentos"] and 'data' in locals() and isinstance(data, dict) and "dashboard_data" in data:
