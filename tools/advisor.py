@@ -35,33 +35,58 @@ def simular_investimento(valor_mensal: float, meses: int, taxa_anual_porcentagem
     }
 
 @mcp.tool()
-def sugerir_investimentos(saldo_livre: float) -> dict:
-    """Retorna opções de investimentos e rentabilidades baseadas no saldo livre informado."""
-    if saldo_livre <= 0:
+def sugerir_investimentos(valor_mensal: float, meses_simulacao: int = 12) -> dict:
+    """Retorna opções de investimentos e rentabilidades baseadas no valor de aporte mensal e simulações para um determinado prazo (default 12 meses)."""
+    if valor_mensal <= 0:
         return {"recomendacao": "No momento, o foco deve ser organizar as contas e sair do vermelho antes de investir."}
     
-    if saldo_livre <= 500:
+    if valor_mensal <= 500:
         opcoes = [
-            {"tipo": "Tesouro Selic", "prazo": "Curto Prazo / Reserva", "rentabilidade_esperada": "~10.5% ao ano", "risco": "Baixíssimo"},
-            {"tipo": "CDB 100% CDI Liquidez Diária", "prazo": "Curto Prazo / Reserva", "rentabilidade_esperada": "~10.4% ao ano", "risco": "Baixo (Garantia FGC)"}
+            {"tipo": "Tesouro Selic", "prazo": "Curto Prazo / Reserva", "taxa_anual": 10.5, "rentabilidade_esperada": "~10.5% ao ano", "risco": "Baixíssimo"},
+            {"tipo": "CDB 100% CDI Liquidez Diária", "prazo": "Curto Prazo / Reserva", "taxa_anual": 10.4, "rentabilidade_esperada": "~10.4% ao ano", "risco": "Baixo (Garantia FGC)"}
         ]
-    elif saldo_livre <= 2000:
+    elif valor_mensal <= 2000:
         opcoes = [
-            {"tipo": "Tesouro IPCA+", "prazo": "Médio Prazo", "rentabilidade_esperada": "Inflação + ~6% ao ano", "risco": "Baixo"},
-            {"tipo": "CDBs Prefixados", "prazo": "Médio Prazo (1 a 3 anos)", "rentabilidade_esperada": "~11% a 12% ao ano", "risco": "Baixo"},
-            {"tipo": "FIIs (Fundos Imobiliários)", "prazo": "Longo Prazo / Renda Passiva", "rentabilidade_esperada": "Dividendos de ~0.8% a 1% ao mês", "risco": "Médio (Renda Variável)"}
+            {"tipo": "Tesouro IPCA+", "prazo": "Médio Prazo", "taxa_anual": 10.5, "rentabilidade_esperada": "Inflação + ~6% ao ano", "risco": "Baixo"},
+            {"tipo": "CDBs Prefixados", "prazo": "Médio Prazo (1 a 3 anos)", "taxa_anual": 11.5, "rentabilidade_esperada": "~11% a 12% ao ano", "risco": "Baixo"},
+            {"tipo": "FIIs (Fundos Imobiliários)", "prazo": "Longo Prazo / Renda Passiva", "taxa_anual": 11.0, "rentabilidade_esperada": "Dividendos de ~0.8% a 1% ao mês", "risco": "Médio (Renda Variável)"}
         ]
     else:
         opcoes = [
-            {"tipo": "Tesouro IPCA+", "prazo": "Longo Prazo / Aposentadoria", "rentabilidade_esperada": "Inflação + ~6% ao ano", "risco": "Baixo"},
-            {"tipo": "ETFs Globais (ex: WRLD11)", "prazo": "Longo Prazo", "rentabilidade_esperada": "Acompanha mercado global", "risco": "Alto (Renda Variável)"},
-            {"tipo": "Carteira de FIIs e Ações", "prazo": "Longo Prazo", "rentabilidade_esperada": "Dividendos mensais + Valorização", "risco": "Médio/Alto"}
+            {"tipo": "Tesouro IPCA+ Longo", "prazo": "Longo Prazo / Aposentadoria", "taxa_anual": 10.5, "rentabilidade_esperada": "Inflação + ~6% ao ano", "risco": "Baixo"},
+            {"tipo": "ETFs Globais (ex: WRLD11)", "prazo": "Longo Prazo", "taxa_anual": 15.0, "rentabilidade_esperada": "Acompanha mercado global", "risco": "Alto (Renda Variável)"},
+            {"tipo": "Carteira de FIIs e Ações", "prazo": "Longo Prazo", "taxa_anual": 12.0, "rentabilidade_esperada": "Dividendos mensais + Valorização", "risco": "Médio/Alto"}
         ]
         
+    labels = []
+    valores = []
+    valor_investido_puro = valor_mensal * meses_simulacao
+    
+    for op in opcoes:
+        taxa_mensal = (op["taxa_anual"] / 100) / 12
+        montante = 0.0
+        for _ in range(meses_simulacao):
+            montante = (montante + valor_mensal) * (1 + taxa_mensal)
+        
+        labels.append(op["tipo"])
+        valores.append(round(montante, 2))
+        op["simulacao_final_projetada"] = f"R$ {montante:.2f} (em {meses_simulacao} meses)"
+        # Remove a taxa interna para não confundir o LLM
+        del op["taxa_anual"]
+        
     return {
-        "analise": f"Com um saldo livre de R$ {saldo_livre:.2f}, você tem boas opções para rentabilizar seu dinheiro.",
+        "analise": f"Com aportes de R$ {valor_mensal:.2f} por {meses_simulacao} meses, eis as projeções para algumas carteiras de investimentos:",
         "opcoes_sugeridas": opcoes,
-        "dica": "Lembre-se: antes de investir em renda variável ou opções presas, construa sua Reserva de Emergência (3 a 6 meses do seu custo de vida) com liquidez diária!"
+        "dica": "O dashboard já desenhou as simulações em barras para o cliente comparar. Use os dados acima para enriquecer sua explicação.",
+        "dashboard_data": {
+            "chart_type": "bar_comparison",
+            "titulo": f"Comparação de Sugestões (Projeção para {meses_simulacao} meses)",
+            "labels": labels,
+            "valores": valores,
+            "valor_investido_puro": valor_investido_puro,
+            "meses": meses_simulacao,
+            "valor_mensal": valor_mensal
+        }
     }
 
 @mcp.tool()

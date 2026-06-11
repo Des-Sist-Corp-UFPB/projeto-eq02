@@ -121,7 +121,7 @@ async def on_message(message: cl.Message):
                 if name:
                     try:
                         from state import DASHBOARD_STATES
-                        if "simular_investimento" in name:
+                        if name in ["simular_investimento", "sugerir_investimentos"]:
                             import json
                             # O conteúdo retornado pela tool do MCP é uma string
                             data = json.loads(tool_msg.content)
@@ -132,7 +132,8 @@ async def on_message(message: cl.Message):
                             if isinstance(data, dict) and "dashboard_data" in data:
                                 DASHBOARD_STATES[cpf] = {
                                     "view": "investimentos",
-                                    "sim_data": data["dashboard_data"]
+                                    "sim_data": data["dashboard_data"],
+                                    "tool_name": name
                                 }
                         else:
                             # Mantem a view atual ou reseta para fluxo_caixa
@@ -146,18 +147,25 @@ async def on_message(message: cl.Message):
                         print(f"[Erro State] {e}")
 
                     # Gera gráfico interativo para simulação usando os dados VINDOS DA TOOL
-                    if name == "simular_investimento" and 'data' in locals() and isinstance(data, dict) and "dashboard_data" in data:
+                    if name in ["simular_investimento", "sugerir_investimentos"] and 'data' in locals() and isinstance(data, dict) and "dashboard_data" in data:
                         try:
                             import plotly.graph_objects as go
                             sim_data = data["dashboard_data"]
-                            eixo_x = sim_data["meses"]
-                            evolucao = sim_data["montante"]
-                            investido = sim_data["investido"]
                             
                             fig = go.Figure()
-                            fig.add_trace(go.Scatter(x=eixo_x, y=evolucao, mode='lines', name='Com Juros Compostos', line=dict(color='#38bdf8', width=3)))
-                            fig.add_trace(go.Scatter(x=eixo_x, y=investido, mode='lines', name='Total Investido', line=dict(color='#f472b6', width=2, dash='dash')))
-                            fig.update_layout(title='Projeção de Investimento', xaxis_title='Meses', yaxis_title='Valor Acumulado (R$)', template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='#94a3b8'))
+                            
+                            if sim_data.get("chart_type") == "bar_comparison":
+                                # Gráfico de Barras
+                                fig.add_trace(go.Bar(x=sim_data["labels"], y=sim_data["valores"], marker_color='#38bdf8', name='Projeção Final'))
+                                fig.update_layout(title=sim_data["titulo"], xaxis_title='Sugestões', yaxis_title='Montante Final (R$)', template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='#94a3b8'))
+                            else:
+                                # Gráfico de Linhas (Simular Investimento Clássico)
+                                eixo_x = sim_data["meses"]
+                                evolucao = sim_data["montante"]
+                                investido = sim_data["investido"]
+                                fig.add_trace(go.Scatter(x=eixo_x, y=evolucao, mode='lines', name='Com Juros Compostos', line=dict(color='#38bdf8', width=3)))
+                                fig.add_trace(go.Scatter(x=eixo_x, y=investido, mode='lines', name='Total Investido', line=dict(color='#f472b6', width=2, dash='dash')))
+                                fig.update_layout(title='Projeção de Investimento', xaxis_title='Meses', yaxis_title='Valor Acumulado (R$)', template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='#94a3b8'))
                             
                             investment_chart = cl.Plotly(name="Simulação Interativa", figure=fig, display="inline")
                         except Exception as e:

@@ -55,9 +55,13 @@ const renderDashboardHtml = () => `
             </div>
         </div>
         <div class="charts-row">
-            <div class="chart-box" style="width: 100%;">
+            <div class="chart-box" style="width: 100%; display: none;" id="boxChartInvestimentos">
                 <h3>Evolução do Patrimônio (Juros Compostos)</h3>
                 <canvas id="chartInvestimentos" style="max-height: 400px;"></canvas>
+            </div>
+            <div class="chart-box" style="width: 100%; display: none;" id="boxChartComparacao">
+                <h3 id="titleChartComparacao">Comparação de Sugestões</h3>
+                <canvas id="chartComparacao" style="max-height: 400px;"></canvas>
             </div>
         </div>
     </div>
@@ -68,6 +72,7 @@ document.getElementById('dashboard-root').innerHTML = renderDashboardHtml();
 let chartFluxoInstance = null;
 let chartCategoriesInstance = null;
 let chartInvestimentosInstance = null;
+let chartComparacaoInstance = null;
 
 const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
@@ -91,7 +96,23 @@ async function fetchAndUpdateDashboard() {
                 document.getElementById('dash-content-fluxo').style.display = 'none';
                 document.getElementById('dash-content-investimentos').style.display = 'block';
                 
-                if(data.sim_data && data.sim_data.montante && data.sim_data.montante.length > 0) {
+                if (data.tool_name === 'sugerir_investimentos' && data.sim_data && data.sim_data.chart_type === 'bar_comparison') {
+                    document.getElementById('boxChartInvestimentos').style.display = 'none';
+                    document.getElementById('boxChartComparacao').style.display = 'block';
+                    
+                    document.getElementById('sim-meses').innerText = data.sim_data.meses;
+                    document.getElementById('sim-investido').innerText = formatCurrency(data.sim_data.valor_investido_puro);
+                    
+                    let max_val = Math.max(...data.sim_data.valores);
+                    document.getElementById('sim-montante').innerText = formatCurrency(max_val);
+                    
+                    document.getElementById('titleChartComparacao').innerText = data.sim_data.titulo;
+                    updateChartComparacao(data.sim_data);
+                    
+                } else if (data.sim_data && data.sim_data.montante && data.sim_data.montante.length > 0) {
+                    document.getElementById('boxChartComparacao').style.display = 'none';
+                    document.getElementById('boxChartInvestimentos').style.display = 'block';
+                    
                     let ult = data.sim_data.montante.length - 1;
                     document.getElementById('sim-meses').innerText = data.sim_data.meses.length;
                     document.getElementById('sim-investido').innerText = formatCurrency(data.sim_data.investido[ult]);
@@ -245,6 +266,45 @@ function updateChartInvestimentos(simData) {
                     }
                 },
                 plugins: { legend: { labels: { color: '#e2e8f0' } } }
+            }
+        });
+    }
+}
+
+function updateChartComparacao(simData) {
+    const ctxComp = document.getElementById('chartComparacao').getContext('2d');
+    
+    if (chartComparacaoInstance) {
+        chartComparacaoInstance.data.labels = simData.labels;
+        chartComparacaoInstance.data.datasets[0].data = simData.valores;
+        chartComparacaoInstance.update();
+    } else {
+        chartComparacaoInstance = new Chart(ctxComp, {
+            type: 'bar',
+            data: {
+                labels: simData.labels,
+                datasets: [{
+                    label: 'Montante Projetado',
+                    data: simData.valores,
+                    backgroundColor: '#38bdf8',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        ticks: { color: '#94a3b8' }, 
+                        grid: { color: 'rgba(255,255,255,0.05)' } 
+                    },
+                    x: { 
+                        ticks: { color: '#94a3b8' }, 
+                        grid: { display: false } 
+                    }
+                },
+                plugins: { legend: { display: false } }
             }
         });
     }
