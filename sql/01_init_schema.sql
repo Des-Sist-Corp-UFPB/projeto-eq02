@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS user_memory (
 -- --------------------------------------------------------
 
 INSERT INTO clients (cpf, nome, email, renda_total) VALUES
-('00011122233', 'admin', 'admin@admin.com', 2000.00)
+('13579024680', 'admin', 'admin@admin.com', 2000.00)
 ON CONFLICT (cpf) DO NOTHING;
 
 -- Mock Data para transações (contas pagas e pendentes do Admin) e Metas
@@ -76,7 +76,7 @@ CROSS JOIN (
         (800.00, 1, 'Moradia', 'Aluguel', current_date + interval '5 days', 'pending', true),
         (120.00, 3, 'Compras', 'Tênis novo (Parcela 1/3)', current_date - interval '10 days', 'paid', false)
 ) AS v(amount, installments, category, description, transaction_date, status, is_recurring)
-WHERE c.cpf = '00011122233' 
+WHERE c.cpf = '13579024680' 
   AND NOT EXISTS (SELECT 1 FROM transactions t WHERE t.client_id = c.id);
 
 INSERT INTO goals (client_id, category, limit_amount, month_year)
@@ -87,5 +87,5 @@ CROSS JOIN (
         ('Alimentação', 600.00),
         ('Lazer', 150.00)
 ) AS v(category, limit_amount)
-WHERE c.cpf = '00011122233'
+WHERE c.cpf = '13579024680'
   AND NOT EXISTS (SELECT 1 FROM goals g WHERE g.client_id = c.id);
