@@ -49,10 +49,10 @@ CREATE TABLE IF NOT EXISTS user_memory (
 );
 
 -- Segurança de Row Level Security (Opcional por enquanto, mas boa prática no Supabase)
--- ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE user_memory ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE clients ENABLE ROW LEVEL SECURITY
+-- ALTER TABLE transactions ENABLE ROW LEVEL SECURITY
+-- ALTER TABLE goals ENABLE ROW LEVEL SECURITY
+-- ALTER TABLE user_memory ENABLE ROW LEVEL SECURITY
 
 -- --------------------------------------------------------
 -- Dados Iniciais (Seed)
