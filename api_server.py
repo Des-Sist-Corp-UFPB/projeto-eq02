@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Response, Request
+from fastapi import FastAPI, HTTPException, Response, Request, WebSocket
 from pydantic import BaseModel
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
@@ -166,6 +166,13 @@ def register(req: RegisterRequest):
     if not new_client:
         raise HTTPException(status_code=500, detail="Erro ao criar cliente.")
     return {"success": True, "client": new_client[0]}
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        await websocket.send_text(f"Message text was: {data}")
 
 # Monta o App do Chainlit na rota /chat
 mount_chainlit(app=app, target="chat_app.py", path="/chat")

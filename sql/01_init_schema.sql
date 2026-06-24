@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS transactions (
 );
 
 -- Garantir que as colunas existam caso a tabela já tenha sido criada antes
-ALTER TABLE transactions ADD COLUMN status VARCHAR(20) DEFAULT 'paid';
-ALTER TABLE transactions ADD COLUMN is_recurring BOOLEAN DEFAULT FALSE;
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'paid';
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS is_recurring BOOLEAN DEFAULT FALSE;
 
 -- Tabela de Metas Mensais
 CREATE TABLE IF NOT EXISTS goals (
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS user_memory (
 -- --------------------------------------------------------
 
 INSERT INTO clients (cpf, nome, email, renda_total) VALUES
-('00011122233', 'João Heslin', 'joaoheslin1@gmail.com', 2000.00)
+('00011122233', 'admin', 'admin@admin.com', 2000.00)
 ON CONFLICT (cpf) DO NOTHING;
 
 -- Mock Data para transações (contas pagas e pendentes do João)
