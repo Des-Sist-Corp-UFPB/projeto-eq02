@@ -6,7 +6,7 @@
 | **Repositório** | https://github.com/des-sist-corp-ufpb/projeto-eq02 |
 | **Aplicação** | https://eq02.dsc.rodrigor.com |
 | **Período de atividade** | 2026-06-25 → 2026-06-25 |
-| **Total de commits** (sem merges, branch main) | 7 |
+| **Total de commits** (sem merges, branch main) | 8 |
 | **Integrantes** | Lucas Henrique Da Silva Menezes (@DevLucasMenezes), Joao Heslin Paulino Honorio (@JoaoHeslin) |
 
 ---
@@ -47,7 +47,7 @@
 | Aspecto | Status | Observação |
 |---------|--------|-----------|
 | Arquitetura em camadas | ❌ | controller=✅  service=❌  repository=❌ |
-| Testes automatizados | ❌ | 0 arquivo(s) de teste |
+| Testes automatizados | ❌ | não encontrados |
 | Migrations versionadas | ❌ | não encontradas |
 | Logging | ✅ | @Slf4j / LoggerFactory / logging.getLogger detectado |
 | Autenticação / Segurança | ❌ | não detectado |
@@ -67,7 +67,7 @@
 |---------|---------------|---------------------|-------------------|----------------------|----------------|
 | Lucas Henrique Da Silva Menezes (@DevLucasMenezes) | 4 | **12** ⚠️ | 2.659 | 2.090 | 100% |
 | Joao Heslin Paulino Honorio (@JoaoHeslin) | 1 | **79** ⚠️ | 2 | 2 | 0% |
-| *(sem login GitHub)* | 2 | 29% | — | — | — |
+| *(sem login GitHub)* | 3 | 38% | — | — | — |
 
 > **⚠️ Divergência entre commits locais e GitHub API:**
 > - **@DevLucasMenezes**: 4 commit(s) na branch `main` vs **12** registrados na API GitHub (commits em branches não mergeadas ou absorvidos via squash-merge sem preservação de autoria).
