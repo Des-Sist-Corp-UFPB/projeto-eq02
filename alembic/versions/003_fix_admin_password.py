@@ -19,12 +19,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Use a well-known bcrypt hash for 'admin123'
-    # Cost 12, valid bcrypt hash.
-    admin_hash = "$2b$12$KixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjIQ6V0.vS"
+    # Como o script roda dentro do container, passlib está disponível!
+    from tools.security import hash_password
+    admin_hash = hash_password("admin123")
 
     op.execute(f"""
-    UPDATE clients SET password_hash = '{admin_hash}' WHERE cpf = '13579024680' AND password_hash IS NULL;
+    UPDATE clients SET password_hash = '{admin_hash}' WHERE cpf = '13579024680';
     """)
 
 def downgrade() -> None:

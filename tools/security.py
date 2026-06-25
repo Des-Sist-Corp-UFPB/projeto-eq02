@@ -57,7 +57,8 @@ SECRET_KEY = "sua_chave_secreta_super_segura_aqui"  # Em produção deve ser env
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 1 dia
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Reduzimos os rounds para 4 (mínimo) para acelerar o login no servidor acadêmico
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=4)
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
