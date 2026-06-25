@@ -6,8 +6,8 @@
 | **Repositório** | https://github.com/des-sist-corp-ufpb/projeto-eq02 |
 | **Aplicação** | https://eq02.dsc.rodrigor.com |
 | **Período de atividade** | 2026-06-25 → 2026-06-25 |
-| **Total de commits** (sem merges) | 3 |
-| **Integrantes** | Lucas Henrique Da Silva Menezes (@DevLucasMenezes), João Heslin (@JoaoHeslin) |
+| **Total de commits** (sem merges, branch main) | 7 |
+| **Integrantes** | Lucas Henrique Da Silva Menezes (@DevLucasMenezes), Joao Heslin Paulino Honorio (@JoaoHeslin) |
 
 ---
 
@@ -63,23 +63,22 @@
 
 ### Resumo
 
-| Usuário | Commits (branch main) | Commits (GitHub API, todas as branches) | Linhas no código atual | % código atual |
-|---------|----------------------|----------------------------------------|----------------------|----------------|
-| Lucas Henrique Da Silva Menezes (@DevLucasMenezes) | 3 | — | 2.090 | ~100% |
-| João Heslin (@JoaoHeslin) | 1 | **79** | 2 | ~0% |
+| Usuário | Commits (main) | Commits (GitHub API) | Linhas adicionadas | Linhas no código atual | % código atual |
+|---------|---------------|---------------------|-------------------|----------------------|----------------|
+| Lucas Henrique Da Silva Menezes (@DevLucasMenezes) | 4 | **12** ⚠️ | 2.659 | 2.090 | 100% |
+| Joao Heslin Paulino Honorio (@JoaoHeslin) | 1 | **79** ⚠️ | 2 | 2 | 0% |
+| *(sem login GitHub)* | 2 | 29% | — | — | — |
+
+> **⚠️ Divergência entre commits locais e GitHub API:**
+> - **@DevLucasMenezes**: 4 commit(s) na branch `main` vs **12** registrados na API GitHub (commits em branches não mergeadas ou absorvidos via squash-merge sem preservação de autoria).
+> - **@JoaoHeslin**: 1 commit(s) na branch `main` vs **79** registrados na API GitHub (commits em branches não mergeadas ou absorvidos via squash-merge sem preservação de autoria).
+>
 
 ### Contribuição por Camada
 
-| Camada | Total linhas | Lucas Henrique Da Silva Menezes (@DevLucasMenezes) |
-|--------|-------------|---------|
-| Frontend | 933 | 100% |
-
----
-
-> **⚠️ Observação sobre contribuição de @JoaoHeslin:**
-> A análise automática (baseada em `git blame` e `git log` da branch `main`) capturou apenas **1 commit** de João Heslin na branch principal. No entanto, a **GitHub API registra 79 commits** sob o login `JoaoHeslin` no repositório — commits realizados em branches de feature que não foram integradas ao `main` via merge convencional (provavelmente squash-merge ou reescrita de histórico pelo colega).
->
-> O código atual na `main` está creditado a `@DevLucasMenezes` via `git blame`, o que indica que as contribuições de João foram absorvidas sem preservar a autoria original. **Isso é uma questão de workflow da equipe**, não ausência de contribuição. Recomenda-se verificar as branches deletadas no histórico do GitHub e o histórico de pull requests para evidências adicionais da participação de João.
+| Camada | Total linhas | Lucas Henrique Da Silva Menezes (@DevLucasMenezes) | Joao Heslin Paulino Honorio (@JoaoHeslin) |
+|--------|-------------|---------|---------|
+| Frontend | 933 | 100% | 0% |
 
 ---
 
