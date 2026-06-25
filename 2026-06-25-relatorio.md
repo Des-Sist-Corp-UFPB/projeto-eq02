@@ -6,8 +6,8 @@
 | **Repositório** | https://github.com/des-sist-corp-ufpb/projeto-eq02 |
 | **Aplicação** | https://eq02.dsc.rodrigor.com |
 | **Período de atividade** | 2026-06-25 → 2026-06-25 |
-| **Total de commits** (sem merges) | 3 |
-| **Integrantes** | Lucas Henrique Da Silva Menezes (@DevLucasMenezes) |
+| **Total de commits** (sem merges, branch main) | 8 |
+| **Integrantes** | Lucas Henrique Da Silva Menezes (@DevLucasMenezes), Joao Heslin Paulino Honorio (@JoaoHeslin) |
 
 ---
 
@@ -47,7 +47,7 @@
 | Aspecto | Status | Observação |
 |---------|--------|-----------|
 | Arquitetura em camadas | ❌ | controller=✅  service=❌  repository=❌ |
-| Testes automatizados | ❌ | 0 arquivo(s) de teste |
+| Testes automatizados | ❌ | não encontrados |
 | Migrations versionadas | ❌ | não encontradas |
 | Logging | ✅ | @Slf4j / LoggerFactory / logging.getLogger detectado |
 | Autenticação / Segurança | ❌ | não detectado |
@@ -63,15 +63,22 @@
 
 ### Resumo
 
-| Usuário | Commits | % commits | Linhas adicionadas | Linhas no código atual | % código atual |
-|---------|---------|-----------|-------------------|----------------------|----------------|
-| Lucas Henrique Da Silva Menezes (@DevLucasMenezes) | 3 | 100% | 2.654 | 2.092 | 100% |
+| Usuário | Commits (main) | Commits (GitHub API) | Linhas adicionadas | Linhas no código atual | % código atual |
+|---------|---------------|---------------------|-------------------|----------------------|----------------|
+| Lucas Henrique Da Silva Menezes (@DevLucasMenezes) | 4 | **12** ⚠️ | 2.659 | 2.090 | 100% |
+| Joao Heslin Paulino Honorio (@JoaoHeslin) | 1 | **79** ⚠️ | 2 | 2 | 0% |
+| *(sem login GitHub)* | 3 | 38% | — | — | — |
+
+> **⚠️ Divergência entre commits locais e GitHub API:**
+> - **@DevLucasMenezes**: 4 commit(s) na branch `main` vs **12** registrados na API GitHub (commits em branches não mergeadas ou absorvidos via squash-merge sem preservação de autoria).
+> - **@JoaoHeslin**: 1 commit(s) na branch `main` vs **79** registrados na API GitHub (commits em branches não mergeadas ou absorvidos via squash-merge sem preservação de autoria).
+>
 
 ### Contribuição por Camada
 
-| Camada | Total linhas | Lucas Henrique Da Silva Menezes (@DevLucasMenezes) |
-|--------|-------------|---------|
-| Frontend | 933 | 100% |
+| Camada | Total linhas | Lucas Henrique Da Silva Menezes (@DevLucasMenezes) | Joao Heslin Paulino Honorio (@JoaoHeslin) |
+|--------|-------------|---------|---------|
+| Frontend | 933 | 100% | 0% |
 
 ---
 
