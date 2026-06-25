@@ -48,6 +48,7 @@ def verificar_output_guardrails(resposta: str) -> str:
             return "⚠️ Desculpe, minhas diretrizes de segurança me impedem de falar sobre ou recomendar jogos de azar, cassinos ou esquemas financeiros não regulamentados."
     return resposta
 
+# pyrefly: ignore [missing-import]
 import bcrypt
 import jwt
 from datetime import datetime, timedelta
