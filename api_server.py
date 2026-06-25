@@ -32,39 +32,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.on_event("startup")
 def startup_event():
-    print("--- INICIANDO SETUP DO BANCO DE DADOS ---", flush=True)
-    schema_path = os.path.join(os.path.dirname(__file__), "sql", "01_init_schema.sql")
-    print(f"Caminho do script: {schema_path}", flush=True)
-    if os.path.exists(schema_path):
-        print("Arquivo encontrado! Rodando script...", flush=True)
-        with open(schema_path, "r", encoding="utf-8") as f:
-            sql_script = f.read()
-        
-        # Vamos dividir o script por ';' e rodar comando por comando
-        # Isso evita que um erro (como CREATE EXTENSION sem permissão) aborte a criação das tabelas
-        commands = sql_script.split(';')
-        for cmd in commands:
-            cmd = cmd.strip()
-            if cmd:
-                print(f"Rodando: {cmd[:50]}...", flush=True)
-                execute_query(cmd, fetch=False)
-        
-        # Garante que o usuário Admin padrão tenha a senha criptografada (já que não podemos hardcodar o bcrypt no SQL de forma fácil)
-        try:
-            from tools.security import hash_password
-            admin_pw_hash = hash_password("admin123")
-            execute_query(
-                "UPDATE clients SET password_hash = %s WHERE cpf = '13579024680' AND password_hash IS NULL",
-                (admin_pw_hash,),
-                fetch=False
-            )
-        except Exception as e:
-            print(f"Aviso: Não foi possível atualizar a senha do Admin no startup: {e}")
-            
-        print("--- SETUP DO BANCO FINALIZADO ---", flush=True)
-    else:
-        print("ERRO: Arquivo sql/01_init_schema.sql NAO ENCONTRADO!", flush=True)
-        print(f"Arquivos na pasta atual: {os.listdir(os.path.dirname(__file__))}", flush=True)
+    print("--- INICIANDO VERIFICAÇÃO DO BANCO DE DADOS ---", flush=True)
+    # A inicialização real das tabelas e do seed de dados agora é feita 
+    # pelo Alembic (migrations) que é rodado automaticamente no docker-compose
+    print("--- BANCO VERIFICADO VIA ALEMBIC ---", flush=True)
 
 class TransactionInput(BaseModel):
     category: str
