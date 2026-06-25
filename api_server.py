@@ -10,7 +10,14 @@ from datetime import datetime, timezone
 import os
 from state import DASHBOARD_STATES
 
-app = FastAPI(title="FinancIA's API")
+app = FastAPI(
+    title="FinancIA's API",
+    description="API para o sistema do Assistente Financeiro Inteligente.",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -67,20 +74,24 @@ class DashboardStateRequest(BaseModel):
     cpf: str
     state: bool
 
-@app.get("/")
+@app.get("/", tags=["Frontend"], summary="Redireciona para o login")
 def root():
+    """Redireciona o usuário para a página estática de login."""
     return RedirectResponse(url="/static/login.html")
 
-@app.get("/hibrido")
+@app.get("/hibrido", tags=["Frontend"], summary="Página Principal")
 def get_hibrido():
+    """Redireciona para a interface híbrida (Chat + Dashboard)."""
     return RedirectResponse(url="/static/hibrido.html")
 
-@app.get("/dashboard")
+@app.get("/dashboard", tags=["Frontend"], summary="Dashboard Isolado")
 def get_dashboard():
+    """Redireciona para a interface apenas do dashboard."""
     return RedirectResponse(url="/static/dashboard_only.html")
 
-@app.get("/api/dashboard_data")
+@app.get("/api/dashboard_data", tags=["Dashboard"], summary="Obter dados financeiros", description="Retorna os dados consolidados do fluxo de caixa e metas do usuário autenticado para alimentar os gráficos.")
 def dashboard_data(request: Request):
+    """Lê o cookie de sessão e consulta as finanças do usuário no banco."""
     cpf = request.cookies.get("auth_cpf")
     if not cpf:
         raise HTTPException(status_code=401, detail="Não autenticado")
@@ -123,16 +134,18 @@ def dashboard_data(request: Request):
     }
 
 
-@app.get("/ping")
+@app.get("/ping", tags=["Health"], summary="Verificação de Saúde (Simples)", response_description="Retorna status OK e a hora atual")
 def ping():
+    """Endpoint de health check usado por sistemas de monitoramento."""
     return {
         "status": "ok",
         "service": "eq02",
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     }
 
-@app.get("/health")
+@app.get("/health", tags=["Health"], summary="Verificação de Saúde Detalhada")
 def health():
+    """Endpoint de saúde para validação do CI/CD bot."""
     return {
         "ok": True,
         "service": "eq02",
@@ -141,13 +154,15 @@ def health():
 
 @app.websocket("/ping")
 async def ping_ws(websocket: WebSocket):
+    """Healthcheck via WebSockets."""
     await websocket.accept()
     await websocket.send_json({"status": "ok"})
     await websocket.close()
 
 
-@app.post("/login")
+@app.post("/login", tags=["Autenticação"], summary="Autenticar usuário", response_description="Seta os cookies de autenticação e retorna sucesso")
 def login(req: LoginRequest, response: Response):
+    """Recebe CPF e E-mail, valida no banco e estabelece a sessão do usuário definindo um cookie 'auth_cpf'."""
     clients = execute_query("SELECT * FROM clients WHERE cpf = %s AND email = %s", (req.cpf, req.email))
     if not clients:
         raise HTTPException(status_code=401, detail="CPF ou E-mail inválidos.")
@@ -168,8 +183,9 @@ def login(req: LoginRequest, response: Response):
     json_resp.content = '{"message": "Login efetuado com sucesso!", "cpf": "' + req.cpf + '", "redirect": "/hibrido"}'
     return json_resp
 
-@app.post("/register")
+@app.post("/register", tags=["Autenticação"], summary="Registrar novo usuário", response_description="Retorna os dados do cliente criado")
 def register(req: RegisterRequest):
+    """Cria uma nova conta para o cliente caso o CPF ou E-mail não existam."""
     existing = execute_query("SELECT id FROM clients WHERE cpf = %s", (req.cpf,))
     if existing:
         raise HTTPException(status_code=400, detail="CPF já cadastrado.")
