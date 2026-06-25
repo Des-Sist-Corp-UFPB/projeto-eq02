@@ -36,8 +36,8 @@ async def on_chat_start():
     cl.user_session.set("thread_id", thread_id)
     cl.user_session.set("cpf", user.identifier)
     
-    # Envia uma mensagem de espera mostrando o CPF para debug
-    msg = cl.Message(content=f"Aguarde, conectando ao FinancIA's e buscando seus dados (CPF Logado: {user.identifier})...")
+    # Envia uma mensagem de espera visualmente amigável
+    msg = cl.Message(content=f"👋 Olá! Estou organizando seus dados financeiros para começar o atendimento. Só um instante... ⏳")
     await msg.send()
     
     # Prompt inicial oculto para forçar o agente a buscar o CPF e se apresentar
