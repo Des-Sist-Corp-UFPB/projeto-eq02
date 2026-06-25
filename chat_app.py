@@ -42,8 +42,8 @@ async def on_chat_start():
     
     # Prompt inicial oculto para forçar o agente a buscar o CPF e se apresentar
     initial_prompt = """O usuário acabou de abrir o chat. 
-Aja imediatamente: Chame a ferramenta `obter_roteiro_atendimento` usando o CPF do cliente.
-Siga rigorosamente os passos que ela te devolver para gerar a sua primeira mensagem de boas-vindas."""
+    Aja imediatamente: Chame a ferramenta `obter_roteiro_atendimento` usando o CPF do cliente.
+    Siga rigorosamente os passos que ela te devolver para gerar a sua primeira mensagem de boas-vindas."""
     
     config = {"configurable": {"thread_id": thread_id}}
     
