@@ -1,5 +1,5 @@
 -- Habilita a extensão pgvector para trabalhar com embeddings na busca semântica
--- CREATE EXTENSION IF NOT EXISTS vector;
+-- CREATE EXTENSION IF NOT EXISTS vector
 
 -- Tabela de Clientes (Multi-tenancy por CPF)
 CREATE TABLE IF NOT EXISTS clients (
