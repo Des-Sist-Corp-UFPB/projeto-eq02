@@ -48,23 +48,26 @@ def verificar_output_guardrails(resposta: str) -> str:
             return "⚠️ Desculpe, minhas diretrizes de segurança me impedem de falar sobre ou recomendar jogos de azar, cassinos ou esquemas financeiros não regulamentados."
     return resposta
 
-# pyrefly: ignore [missing-import]
-from passlib.context import CryptContext
+import bcrypt
 import jwt
 from datetime import datetime, timedelta
+import os
 
 SECRET_KEY = "sua_chave_secreta_super_segura_aqui"  # Em produção deve ser env var
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 1 dia
 
-# Reduzimos os rounds para 4 (mínimo) para acelerar o login no servidor acadêmico
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=4)
-
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    # Usando bcrypt puro com rounds=4 para maior performance em servidores menores
+    salt = bcrypt.gensalt(rounds=4)
+    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed.decode('utf-8')
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except Exception:
+        return False
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()

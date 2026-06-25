@@ -14,6 +14,6 @@ plotly
 websockets
 alembic>=1.13.0
 PyJWT>=2.8.0
-passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.0
 pytest>=8.0.0
 pytest-asyncio>=0.23.0

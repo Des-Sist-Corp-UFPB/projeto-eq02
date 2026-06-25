@@ -15,16 +15,20 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 import os
+import sys
 from dotenv import load_dotenv
+
+# Adiciona o diretório raiz do projeto ao sys.path para o Alembic conseguir importar módulos (ex: tools.security)
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 load_dotenv()
 
 # Constrói a URL do banco dinamicamente
-db_host = os.environ.get("DB_HOST", "db")
-db_port = os.environ.get("DB_PORT", "5432")
-db_name = os.environ.get("DB_NAME", "financia_db")
-db_user = os.environ.get("DB_USER", "postgres")
-db_password = os.environ.get("DB_PASSWORD", "postgres")
+db_host = os.environ.get("DB_HOST")
+db_port = os.environ.get("DB_PORT")
+db_name = os.environ.get("DB_NAME")
+db_user = os.environ.get("DB_USER")
+db_password = os.environ.get("DB_PASSWORD")
 
 config.set_main_option(
     "sqlalchemy.url",
