@@ -11,3 +11,4 @@ chainlit>=1.1.0
 mcp
 langchain-mcp-adapters
 plotly
+websockets
