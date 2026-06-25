@@ -8,6 +8,7 @@ from tools.goals import mcp as goals_mcp
 from tools.memory import mcp as memory_mcp
 from tools.advisor import mcp as advisor_mcp
 from tools.agent_behavior import mcp as behavior_mcp
+from tools.security import mcp as security_mcp
 
 load_dotenv()
 
@@ -29,6 +30,7 @@ mcp.mount(goals_mcp, prefix="goals")
 mcp.mount(memory_mcp, prefix="memory")
 mcp.mount(advisor_mcp, prefix="advisor")
 mcp.mount(behavior_mcp, prefix="behavior")
+mcp.mount(security_mcp, prefix="security")
 
 @mcp.tool()
 def help() -> str:
