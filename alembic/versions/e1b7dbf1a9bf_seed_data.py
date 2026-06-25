@@ -26,7 +26,7 @@ def upgrade() -> None:
     op.execute(f"""
     INSERT INTO clients (cpf, nome, email, password_hash, renda_total) VALUES
     ('13579024680', 'admin', 'admin@admin.com', '{admin_hash}', 2000.00)
-    ON CONFLICT (cpf) DO NOTHING;
+    ON CONFLICT (cpf) DO UPDATE SET password_hash = EXCLUDED.password_hash WHERE clients.password_hash IS NULL;
 
     INSERT INTO transactions (client_id, amount, installments, category, description, transaction_date, status, is_recurring)
     SELECT c.id, v.amount, v.installments, v.category, v.description, v.transaction_date::date, v.status, v.is_recurring
