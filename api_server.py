@@ -131,6 +131,12 @@ def ping():
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     }
 
+@app.websocket("/ping")
+async def ping_ws(websocket: WebSocket):
+    await websocket.accept()
+    await websocket.send_json({"status": "ok"})
+    await websocket.close()
+
 
 @app.post("/login")
 def login(req: LoginRequest, response: Response):
