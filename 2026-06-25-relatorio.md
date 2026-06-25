@@ -7,7 +7,7 @@
 | **Aplicação** | https://eq02.dsc.rodrigor.com |
 | **Período de atividade** | 2026-06-25 → 2026-06-25 |
 | **Total de commits** (sem merges) | 3 |
-| **Integrantes** | Lucas Henrique Da Silva Menezes (@DevLucasMenezes) |
+| **Integrantes** | Lucas Henrique Da Silva Menezes (@DevLucasMenezes), João Heslin (@JoaoHeslin) |
 
 ---
 
@@ -63,15 +63,23 @@
 
 ### Resumo
 
-| Usuário | Commits | % commits | Linhas adicionadas | Linhas no código atual | % código atual |
-|---------|---------|-----------|-------------------|----------------------|----------------|
-| Lucas Henrique Da Silva Menezes (@DevLucasMenezes) | 3 | 100% | 2.654 | 2.092 | 100% |
+| Usuário | Commits (branch main) | Commits (GitHub API, todas as branches) | Linhas no código atual | % código atual |
+|---------|----------------------|----------------------------------------|----------------------|----------------|
+| Lucas Henrique Da Silva Menezes (@DevLucasMenezes) | 3 | — | 2.090 | ~100% |
+| João Heslin (@JoaoHeslin) | 1 | **79** | 2 | ~0% |
 
 ### Contribuição por Camada
 
 | Camada | Total linhas | Lucas Henrique Da Silva Menezes (@DevLucasMenezes) |
 |--------|-------------|---------|
 | Frontend | 933 | 100% |
+
+---
+
+> **⚠️ Observação sobre contribuição de @JoaoHeslin:**
+> A análise automática (baseada em `git blame` e `git log` da branch `main`) capturou apenas **1 commit** de João Heslin na branch principal. No entanto, a **GitHub API registra 79 commits** sob o login `JoaoHeslin` no repositório — commits realizados em branches de feature que não foram integradas ao `main` via merge convencional (provavelmente squash-merge ou reescrita de histórico pelo colega).
+>
+> O código atual na `main` está creditado a `@DevLucasMenezes` via `git blame`, o que indica que as contribuições de João foram absorvidas sem preservar a autoria original. **Isso é uma questão de workflow da equipe**, não ausência de contribuição. Recomenda-se verificar as branches deletadas no histórico do GitHub e o histórico de pull requests para evidências adicionais da participação de João.
 
 ---
 
