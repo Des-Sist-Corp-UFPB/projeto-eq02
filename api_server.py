@@ -48,6 +48,19 @@ def startup_event():
             if cmd:
                 print(f"Rodando: {cmd[:50]}...", flush=True)
                 execute_query(cmd, fetch=False)
+        
+        # Garante que o usuário Admin padrão tenha a senha criptografada (já que não podemos hardcodar o bcrypt no SQL de forma fácil)
+        try:
+            from tools.security import hash_password
+            admin_pw_hash = hash_password("admin123")
+            execute_query(
+                "UPDATE clients SET password_hash = %s WHERE cpf = '13579024680' AND password_hash IS NULL",
+                (admin_pw_hash,),
+                fetch=False
+            )
+        except Exception as e:
+            print(f"Aviso: Não foi possível atualizar a senha do Admin no startup: {e}")
+            
         print("--- SETUP DO BANCO FINALIZADO ---", flush=True)
     else:
         print("ERRO: Arquivo sql/01_init_schema.sql NAO ENCONTRADO!", flush=True)
@@ -63,12 +76,13 @@ class TransactionInput(BaseModel):
 
 class LoginRequest(BaseModel):
     cpf: str
-    email: str
+    password: str
 
 class RegisterRequest(BaseModel):
     nome: str
     cpf: str
     email: str
+    password: str
 
 class DashboardStateRequest(BaseModel):
     cpf: str
@@ -163,14 +177,26 @@ async def ping_ws(websocket: WebSocket):
 @app.post("/login", tags=["Autenticação"], summary="Autenticar usuário", response_description="Seta os cookies de autenticação e retorna sucesso")
 def login(req: LoginRequest, response: Response):
     """Recebe CPF e E-mail, valida no banco e estabelece a sessão do usuário definindo um cookie 'auth_cpf'."""
-    clients = execute_query("SELECT * FROM clients WHERE cpf = %s AND email = %s", (req.cpf, req.email))
+    # Agora buscamos o hash da senha também
+    clients = execute_query("SELECT cpf, password_hash FROM clients WHERE cpf = %s", (req.cpf,))
     if not clients:
-        raise HTTPException(status_code=401, detail="CPF ou E-mail inválidos.")
+        raise HTTPException(status_code=401, detail="CPF ou Senha inválidos.")
+    
+    user_record = clients[0]
+    stored_hash = user_record.get('password_hash')
+    
+    from tools.security import verify_password, create_access_token
+    
+    # Valida se o hash confere com a senha digitada
+    if not stored_hash or not verify_password(req.password, stored_hash):
+        raise HTTPException(status_code=401, detail="CPF ou Senha inválidos.")
     
     # Reseta a visibilidade do dashboard no login
     DASHBOARD_STATES[req.cpf] = False
+    # Gera o token JWT
+    access_token = create_access_token(data={"sub": req.cpf})
         
-    # Prepara o JSON e seta o Cookie para o Chainlit poder ler
+    # Prepara o JSON
     json_resp = JSONResponse(content={"message": "Login efetuado com sucesso!", "cpf": req.cpf})
 
     # IMPORTANTE: Forçar a exclusão dos cookies de sessão do Chainlit (que são HttpOnly e travam a sessão)
@@ -179,6 +205,9 @@ def login(req: LoginRequest, response: Response):
     json_resp.delete_cookie("session_id", path="/")
     json_resp.delete_cookie("session_id", path="/chat")
 
+    # Seta o cookie com o JWT para validação forte
+    json_resp.set_cookie(key="auth_token", value=access_token, httponly=True, path="/")
+    # Seta o cookie do auth_cpf para a interface do frontend continuar funcionando
     json_resp.set_cookie(key="auth_cpf", value=req.cpf, httponly=False, path="/")
     json_resp.content = '{"message": "Login efetuado com sucesso!", "cpf": "' + req.cpf + '", "redirect": "/hibrido"}'
     return json_resp
@@ -186,13 +215,16 @@ def login(req: LoginRequest, response: Response):
 @app.post("/register", tags=["Autenticação"], summary="Registrar novo usuário", response_description="Retorna os dados do cliente criado")
 def register(req: RegisterRequest):
     """Cria uma nova conta para o cliente caso o CPF ou E-mail não existam."""
-    existing = execute_query("SELECT id FROM clients WHERE cpf = %s", (req.cpf,))
+    existing = execute_query("SELECT id FROM clients WHERE cpf = %s OR email = %s", (req.cpf, req.email))
     if existing:
-        raise HTTPException(status_code=400, detail="CPF já cadastrado.")
+        raise HTTPException(status_code=400, detail="CPF ou E-mail já cadastrados.")
         
-    sql = """INSERT INTO clients (nome, cpf, email, renda_total) 
-             VALUES (%s, %s, %s, %s) RETURNING *"""
-    new_client = execute_insert(sql, (req.nome, req.cpf, req.email, 0.00))
+    from tools.security import hash_password
+    hashed_pw = hash_password(req.password)
+        
+    sql = """INSERT INTO clients (nome, cpf, email, password_hash, renda_total) 
+             VALUES (%s, %s, %s, %s, %s) RETURNING id, nome, cpf, email"""
+    new_client = execute_insert(sql, (req.nome, req.cpf, req.email, hashed_pw, 0.00))
     if not new_client:
         raise HTTPException(status_code=500, detail="Erro ao criar cliente.")
     return {"success": True, "client": new_client[0]}

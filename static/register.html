@@ -87,6 +87,7 @@
             <input type="text" id="nome" placeholder="Nome Completo" required>
             <input type="email" id="email" placeholder="E-mail" required>
             <input type="text" id="cpf" placeholder="CPF (Apenas números)" required maxlength="11">
+            <input type="password" id="password" placeholder="Senha" required>
             <button type="submit">Cadastrar</button>
         </form>
         <div class="link">
@@ -100,6 +101,7 @@
             const nome = document.getElementById('nome').value;
             const email = document.getElementById('email').value;
             const cpf = document.getElementById('cpf').value;
+            const password = document.getElementById('password').value;
 
             const btn = e.target.querySelector('button');
             btn.textContent = 'Aguarde...';
@@ -108,7 +110,7 @@
             const res = await fetch('/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nome, cpf, email })
+                body: JSON.stringify({ nome, cpf, email, password })
             });
 
             if (res.ok) {
