@@ -131,6 +131,14 @@ def ping():
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     }
 
+@app.get("/health")
+def health():
+    return {
+        "ok": True,
+        "service": "eq02",
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    }
+
 @app.websocket("/ping")
 async def ping_ws(websocket: WebSocket):
     await websocket.accept()
