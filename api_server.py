@@ -183,6 +183,16 @@ async def websocket_endpoint(websocket: WebSocket):
 # Monta o App do Chainlit na rota /chat
 mount_chainlit(app=app, target="chat_app.py", path="/chat")
 
+import logging
+
+class FilterUpgrade(logging.Filter):
+    def filter(self, record):
+        return "Unsupported upgrade request" not in record.getMessage()
+
+# O Uvicorn imprime esse warning no logger 'uvicorn.error'.
+# Injetamos nosso filtro diretamente no logger para silenciá-lo de vez.
+logging.getLogger("uvicorn.error").addFilter(FilterUpgrade())
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8080, ws="websockets")
