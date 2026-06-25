@@ -8,6 +8,8 @@ from openai import AsyncOpenAI
 
 openai_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
+from tools.security import mask_cpf, verificar_output_guardrails
+
 # Esta função intercepta o cookie de login definido pelo nosso FastAPI
 @cl.header_auth_callback
 def header_auth_callback(headers: dict) -> Optional[cl.User]:
@@ -18,8 +20,7 @@ def header_auth_callback(headers: dict) -> Optional[cl.User]:
         for k, v in cookies_list:
             if k == "auth_cpf":
                 cpf = v
-                print(f"[DEBUG AUTH] Cookies Recebidos: {cookies_list}")
-                print(f"[DEBUG AUTH] CPF Extraído: {cpf}")
+                print(f"[DEBUG AUTH] CPF Extraído: {mask_cpf(cpf)}")
                 return cl.User(identifier=cpf)
     print(f"[DEBUG AUTH] Cookie auth_cpf não encontrado. Cookies totais: {cookie}")
     return None
@@ -71,6 +72,17 @@ async def on_message(message: cl.Message):
     thread_id = cl.user_session.get("thread_id")
     
     config = {"configurable": {"thread_id": thread_id}}
+    
+    # 1.3 Rate Limiting
+    import time
+    message_history = cl.user_session.get("message_history", [])
+    current_time = time.time()
+    message_history = [t for t in message_history if current_time - t < 60]
+    if len(message_history) >= 10:
+        await cl.Message(content="⚠️ Você enviou muitas mensagens muito rápido. Por favor, aguarde um minuto antes de enviar outra.").send()
+        return
+    message_history.append(current_time)
+    cl.user_session.set("message_history", message_history)
     
     # Processa áudio se houver
     audio_text = ""
@@ -148,6 +160,9 @@ async def on_message(message: cl.Message):
                         except Exception as e:
                             print(f"[Erro State] {e}")
                                 
+    # 1.4 Output Guardrails
+    final_response = verificar_output_guardrails(final_response)
+
     # ================= SINCRONIZAÇÃO DE UI =================
     # Só abre o dashboard DEPOIS que o LLM terminar de pensar e devolver a resposta final.
     # O controle agora é 100% feito interceptando as tools que a IA escolheu usar.

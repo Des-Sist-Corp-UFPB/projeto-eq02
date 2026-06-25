@@ -11,6 +11,9 @@ def add_transaction(cpf: str, amount: float, category: str, description: str, da
     client = _get_client_internal(cpf)
     if not client:
         return {"error": f"Cliente com CPF {cpf} não encontrado."}
+        
+    if amount < 0:
+        return {"error": "ERRO DE SEGURANÇA: O valor (amount) não pode ser negativo. Transações devem ser registradas com valor absoluto positivo. Corrija o parâmetro e tente novamente."}
     
     if status.lower() == 'pendente': status = 'pending'
     elif status.lower() == 'pago': status = 'paid'
@@ -52,6 +55,8 @@ def update_transaction(transaction_id: str, amount: float = None, category: str 
     updates = []
     params = []
     if amount is not None:
+        if amount < 0:
+            return {"error": "ERRO DE SEGURANÇA: O valor (amount) não pode ser negativo. Transações devem ser registradas com valor absoluto positivo. Corrija o parâmetro e tente novamente."}
         updates.append("amount = %s")
         params.append(amount)
     if category is not None:
