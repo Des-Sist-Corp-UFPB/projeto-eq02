@@ -1,6 +1,17 @@
 version: '3.8'
 
 services:
+  migrations:
+    image: ${APP_IMAGE:-financia-api:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: alembic upgrade head
+    env_file:
+      - .env
+    networks:
+      - levius-network
+
   api:
     image: ${APP_IMAGE:-financia-api:latest}
     build:
@@ -13,11 +24,14 @@ services:
     environment:
       - FORCE_RECREATE=1
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8080/ping"]
+      test: [ "CMD-SHELL", "curl -sf http://127.0.0.1:8080/ping" ]
       interval: 15s
       timeout: 10s
       retries: 5
       start_period: 300s
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
     networks:
       - levius-network
 
