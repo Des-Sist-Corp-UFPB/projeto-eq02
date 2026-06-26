@@ -24,13 +24,13 @@ mcp = FastMCP(
     ),
 )
 
-mcp.mount(clients_mcp, prefix="clients")
-mcp.mount(transactions_mcp, prefix="transactions")
-mcp.mount(goals_mcp, prefix="goals")
-mcp.mount(memory_mcp, prefix="memory")
-mcp.mount(advisor_mcp, prefix="advisor")
-mcp.mount(behavior_mcp, prefix="behavior")
-mcp.mount(security_mcp, prefix="security")
+mcp.mount(clients_mcp, namespace="clients")
+mcp.mount(transactions_mcp, namespace="transactions")
+mcp.mount(goals_mcp, namespace="goals")
+mcp.mount(memory_mcp, namespace="memory")
+mcp.mount(advisor_mcp, namespace="advisor")
+mcp.mount(behavior_mcp, namespace="behavior")
+mcp.mount(security_mcp, namespace="security")
 
 @mcp.tool()
 def help() -> str:
