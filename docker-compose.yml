@@ -14,7 +14,7 @@ services:
       - FORCE_RECREATE=1
       - DEPLOY_REVISION=2
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/ping"]
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8080/ping"]
       interval: 15s
       timeout: 10s
       retries: 5

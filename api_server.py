@@ -54,10 +54,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.on_event("startup")
 def startup_event():
-    print("--- INICIANDO VERIFICAÇÃO DO BANCO DE DADOS ---", flush=True)
-    # A inicialização real das tabelas e do seed de dados agora é feita 
-    # pelo Alembic (migrations) que é rodado automaticamente no docker-compose
-    print("--- BANCO VERIFICADO VIA ALEMBIC ---", flush=True)
+    print("--- API INICIADA COM SUCESSO ---", flush=True)
 
 class TransactionInput(BaseModel):
     category: str
