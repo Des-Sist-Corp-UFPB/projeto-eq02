@@ -14,4 +14,4 @@ COPY . .
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "alembic upgrade head && uvicorn api_server:app --host 0.0.0.0 --port 8080 --ws websockets"]
+CMD ["sh", "-c", "alembic upgrade head && python mcp_server.py & uvicorn api_server:app --host 0.0.0.0 --port 8080 --ws websockets"]

@@ -33,14 +33,11 @@ async def get_agent_app():
     if _agent_app is not None:
         return _agent_app
 
-    # Inicializa o Cliente MCP que vai se comunicar com o mcp_server.py via Subprocesso (Stdio)
     _mcp_client = MultiServerMCPClient(
         {
             "finance_server": {
-                "command": "python",
-                "args": ["mcp_server.py", "--stdio"],
-                "transport": "stdio",
-                "env": dict(os.environ)
+                "url": "http://127.0.0.1:8000/sse",
+                "transport": "sse"
             }
         },
         tool_name_prefix=False
