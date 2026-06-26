@@ -38,7 +38,7 @@ async def get_agent_app():
         {
             "finance_server": {
                 "command": "python",
-                "args": ["mcp_server.py"],
+                "args": ["mcp_server.py", "--stdio"],
                 "transport": "stdio",
                 "env": dict(os.environ)
             }

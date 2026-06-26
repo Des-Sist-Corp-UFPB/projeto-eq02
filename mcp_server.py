@@ -40,4 +40,8 @@ def help() -> str:
     return "\n".join(lines)
 
 if __name__ == "__main__":
-    mcp.run()
+    import sys
+    if "--stdio" in sys.argv:
+        mcp.run(transport="stdio")
+    else:
+        mcp.run(transport="sse")

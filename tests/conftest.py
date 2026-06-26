@@ -1,3 +1,4 @@
+# pyrefly: ignore [missing-import]
 import pytest
 from unittest.mock import patch, MagicMock
 from api_server import app
