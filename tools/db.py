@@ -12,7 +12,7 @@ def get_pool():
     global _pool
     if _pool is None:
         _pool = ThreadedConnectionPool(
-            1, 20,
+            1, 5,
             host=os.environ.get("DB_HOST"),
             port=os.environ.get("DB_PORT"),
             dbname=os.environ.get("DB_NAME"),
