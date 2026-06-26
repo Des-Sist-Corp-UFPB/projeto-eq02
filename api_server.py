@@ -142,7 +142,7 @@ def dashboard_data(request: Request):
 
 
 @app.get("/ping", tags=["Health"], summary="Verificação de Saúde (Simples)", response_description="Retorna status OK e a hora atual")
-def ping():
+async def ping():
     """Endpoint de health check usado por sistemas de monitoramento."""
     return {
         "status": "ok",
@@ -151,7 +151,7 @@ def ping():
     }
 
 @app.get("/health", tags=["Health"], summary="Verificação de Saúde Detalhada")
-def health():
+async def health():
     """Endpoint de saúde para validação do CI/CD bot."""
     return {
         "ok": True,
