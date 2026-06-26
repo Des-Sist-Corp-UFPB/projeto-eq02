@@ -14,4 +14,4 @@ COPY . .
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "alembic upgrade head && /usr/bin/supervisord -c /app/supervisord.conf"]
+CMD ["/usr/bin/supervisord", "-c", "/app/supervisord.conf"]
