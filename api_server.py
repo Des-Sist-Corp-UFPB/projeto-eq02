@@ -27,6 +27,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.exceptions import RequestValidationError
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Tratamento Global de Exceções Genéricas (500)
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Erro global não tratado: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Ocorreu um erro interno no servidor.", "error": str(exc)},
+    )
+
+# Tratamento Global de Erros de Validação (422)
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": "Erro de validação nos dados fornecidos.", "errors": exc.errors()},
+    )
+
 # Monta a pasta static para servir os HTMLs de Login
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
