@@ -21,7 +21,13 @@ def add_transaction(cpf: str, amount: float, category: str, description: str, da
     sql = """INSERT INTO transactions (client_id, amount, installments, category, description, transaction_date, status, is_recurring)
              VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING *"""
     res = execute_insert(sql, (client["id"], amount, installments, category, description, date, status, is_recurring))
-    return res[0] if res else {}
+    
+    from tools.advisor import analisar_fluxo_caixa
+    return {
+        "status": "success",
+        "transacao_registrada": res[0] if res else {},
+        "fluxo_de_caixa_atualizado": analisar_fluxo_caixa(cpf)
+    }
 
 @mcp.tool()
 def query_transactions(cpf: str, month: int = None, year: int = None, status: str = None) -> list:
@@ -85,11 +91,42 @@ def update_transaction(transaction_id: str, amount: float = None, category: str 
     params.append(transaction_id)
     
     res = execute_insert(sql, tuple(params))
-    return res[0] if res else {"error": "Transação não encontrada ou falha ao atualizar."}
+    
+    # precisamos recuperar o cpf do client_id para atualizar o fluxo
+    from tools.db import execute_query
+    from tools.advisor import analisar_fluxo_caixa
+    
+    cpf_cliente = None
+    if res:
+        client_data = execute_query("SELECT cpf FROM clients WHERE id = %s", (res[0]["client_id"],), fetch_one=True)
+        if client_data:
+            cpf_cliente = client_data[0]["cpf"]
+            
+    return {
+        "status": "success",
+        "transacao_atualizada": res[0] if res else {},
+        "fluxo_de_caixa_atualizado": analisar_fluxo_caixa(cpf_cliente) if cpf_cliente else None
+    } if res else {"error": "Transação não encontrada ou falha ao atualizar."}
 
 @mcp.tool()
 def delete_transaction(transaction_id: str) -> dict:
     """Exclui permanentemente uma transação ou conta a pagar do banco de dados pelo seu ID."""
+    # Busca o client_id antes de deletar
+    from tools.db import execute_query
+    from tools.advisor import analisar_fluxo_caixa
+    
+    cpf_cliente = None
+    trans = execute_query("SELECT client_id FROM transactions WHERE id = %s", (transaction_id,), fetch_one=True)
+    if trans:
+        client_data = execute_query("SELECT cpf FROM clients WHERE id = %s", (trans[0]["client_id"],), fetch_one=True)
+        if client_data:
+            cpf_cliente = client_data[0]["cpf"]
+
     sql = "DELETE FROM transactions WHERE id = %s RETURNING id"
     res = execute_insert(sql, (transaction_id,))
-    return {"status": "success", "deleted_id": transaction_id} if res else {"error": "Falha ao excluir ou transação não encontrada."}
+    
+    return {
+        "status": "success", 
+        "deleted_id": transaction_id,
+        "fluxo_de_caixa_atualizado": analisar_fluxo_caixa(cpf_cliente) if cpf_cliente else None
+    } if res else {"error": "Falha ao excluir ou transação não encontrada."}
