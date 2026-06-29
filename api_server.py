@@ -170,6 +170,8 @@ def login(req: LoginRequest, response: Response):
     # Agora buscamos o hash da senha também
     clients = execute_query("SELECT cpf, password_hash FROM clients WHERE cpf = %s", (req.cpf,))
     if not clients:
+        from tools.audit import log_action
+        log_action("LOGIN_FAILED", req.cpf, {"reason": "User not found"})
         raise HTTPException(status_code=401, detail="CPF ou Senha inválidos.")
     
     user_record = clients[0]
@@ -179,6 +181,8 @@ def login(req: LoginRequest, response: Response):
     
     # Valida se o hash confere com a senha digitada
     if not stored_hash or not verify_password(req.password, stored_hash):
+        from tools.audit import log_action
+        log_action("LOGIN_FAILED", req.cpf, {"reason": "Invalid password"})
         raise HTTPException(status_code=401, detail="CPF ou Senha inválidos.")
     
     # Reseta a visibilidade do dashboard no login
@@ -200,6 +204,10 @@ def login(req: LoginRequest, response: Response):
     # Seta o cookie do auth_cpf para a interface do frontend continuar funcionando
     json_resp.set_cookie(key="auth_cpf", value=req.cpf, httponly=False, path="/")
     json_resp.content = '{"message": "Login efetuado com sucesso!", "cpf": "' + req.cpf + '", "redirect": "/hibrido"}'
+    
+    from tools.audit import log_action
+    log_action("LOGIN_SUCCESS", req.cpf)
+    
     return json_resp
 
 @app.post("/register", tags=["Autenticação"], summary="Registrar novo usuário", response_description="Retorna os dados do cliente criado")
@@ -217,6 +225,10 @@ def register(req: RegisterRequest):
     new_client = execute_insert(sql, (req.nome, req.cpf, req.email, hashed_pw, 0.00))
     if not new_client:
         raise HTTPException(status_code=500, detail="Erro ao criar cliente.")
+        
+    from tools.audit import log_action
+    log_action("REGISTER", req.cpf, {"email": req.email, "nome": req.nome})
+    
     return {"success": True, "client": new_client[0]}
 
 @app.websocket("/ws")
