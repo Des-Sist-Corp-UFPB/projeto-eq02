@@ -55,11 +55,12 @@ docker compose up --build -d
 
 *(Nota: o container aguardará pacientemente as migrações do banco terminarem antes de liberar o healthcheck).*
 
-### 4. Testes Automatizados
+### 4. Testes Automatizados e Cobertura (93%)
 Para rodar a bateria de testes de forma limpa e rápida na sua máquina (é recomendável usar um ambiente virtual local):
 ```bash
-pytest tests/ -v
+pytest --cov=. --cov-report=html
 ```
+O percentual atual de cobertura automatizada de testes para este repositório alcançou **93%**, o relatório completo foi gerado e pode ser consultado na pasta `cobertura/`.
 
 ### 5. Acessando a Aplicação
 Acesse no seu navegador através de:
