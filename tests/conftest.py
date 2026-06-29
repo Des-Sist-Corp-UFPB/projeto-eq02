@@ -1,6 +1,9 @@
 # pyrefly: ignore [missing-import]
 import pytest
 from unittest.mock import patch, MagicMock
+import sys
+sys.modules['chainlit.utils'] = MagicMock()
+
 from api_server import app
 from fastapi.testclient import TestClient
 

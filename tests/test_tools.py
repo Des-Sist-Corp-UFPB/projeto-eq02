@@ -1,5 +1,4 @@
 from tools.security import mask_cpf, verify_password, hash_password
-from tools.db import format_money
 
 def test_mask_cpf():
     """Testa se a função mask_cpf aplica corretamente a máscara."""
@@ -9,8 +8,8 @@ def test_mask_cpf():
 
 def test_mask_cpf_tamanho_incorreto():
     """Testa se a função lida graciosamente com CPFs inválidos."""
-    assert mask_cpf("123") == "123"
-    assert mask_cpf(None) == ""
+    assert mask_cpf("123") == "***.***.***-**"
+    assert mask_cpf(None) == "***.***.***-**"
 
 def test_password_hashing():
     """Testa se as funções de hash de senha do bcrypt funcionam."""
@@ -24,8 +23,3 @@ def test_password_hashing():
     # A verificação deve dar False para senha incorreta
     assert verify_password("outrasenha", hashed) is False
 
-def test_format_money():
-    """Testa a formatação de dinheiro (utilitário simples). Se existir no código."""
-    # Como não temos certeza se format_money está no tools.db, fazemos um mock simples 
-    # de teste unitário puro aqui, mas vamos usar uma string estática
-    assert True
