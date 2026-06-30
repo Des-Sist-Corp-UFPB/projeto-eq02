@@ -32,6 +32,23 @@ O projeto foi refatorado para atender altos padrões de engenharia de software e
 7. **Banco de Dados (PostgreSQL + Alembic):** Container nativo de PostgreSQL gerenciado pelo docker-compose. O controle de versão do schema é feito via Alembic.
 8. **Bateria de Testes (Pytest):** O projeto conta com testes automatizados focados em API e Utils, utilizando injeção de dependência e `mocking` para garantir a qualidade sem poluir o banco real.
 
+## Log de Auditoria
+- **O que é auditado:** Ações cruciais de segurança dos usuários, como Login e Registro de conta.
+- **Onde fica armazenado:** Na tabela `audit_logs` do banco de dados PostgreSQL. Os principais campos incluem a ação (`action`), o usuário (`user_cpf`) e detalhes extras (`details` em formato JSON).
+- **Como foi implementado:** Através de uma função utilitária dedicada (`log_action`) que executa a inserção diretamente no banco de dados e é chamada nos endpoints relevantes da API.
+- **Quais arquivos participam:** 
+  - `tools/audit.py` (função de registro `log_action`)
+  - `api_server.py` (chamadas de auditoria nas rotas de login/registro)
+  - `alembic/versions/006_audit_logs.py` (migration de criação da tabela)
+
+## Integração com Serviço Externo
+- **Qual é o serviço externo:** OpenAI.
+- **Para que é usado:** Utilizado como o cérebro da inteligência artificial do assistente (modelo `gpt-4o-mini` via LangGraph), para transcrição de áudio via Whisper e geração de áudio (Text-to-Speech) de forma dinâmica para as respostas do assistente.
+- **Quais arquivos participam:**
+  - `chat_app.py` (gerenciamento das chamadas da API da OpenAI para TTS e Transcrição/Whisper)
+  - `agent.py` (configuração e uso do LLM no LangGraph)
+- **Como é configurado:** Através da variável de ambiente `OPENAI_API_KEY` injetada no container via arquivo `.env`.
+
 ## 🚀 Como Executar o Projeto Localmente
 
 A aplicação é **100% conteinerizada**, pronta para produção. O banco de dados já sobe junto com o projeto.
