@@ -2,8 +2,12 @@
 from fastmcp import FastMCP
 from typing import Optional, Dict
 from datetime import datetime, timedelta
+import time
+from opentelemetry import trace
 from tools.clients import _get_client_internal
 from tools.db import execute_query
+
+tracer = trace.get_tracer("advisor")
 
 mcp = FastMCP("advisor")
 
@@ -106,8 +110,12 @@ def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False,
 @mcp.tool()
 def analisar_fluxo_caixa(cpf: str) -> dict:
     """Analisa os gastos focando apenas nas parcelas ou despesas integrais que incidem no mês vigente."""
-    client = _get_client_internal(cpf)
-    if not client: return {"error": "Cliente não encontrado"}
+    with tracer.start_as_current_span("analise-fluxo-caixa-50-30-20") as span:
+        span.set_attribute("usuario.cpf", cpf)
+        time.sleep(0.5) # Gargalo proposital para o trace de 500ms
+        
+        client = _get_client_internal(cpf)
+        if not client: return {"error": "Cliente não encontrado"}
     
     renda = float(client.get("renda_total", 0.0))
     hoje = datetime.now()

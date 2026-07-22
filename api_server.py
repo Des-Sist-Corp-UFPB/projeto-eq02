@@ -9,6 +9,9 @@ from chainlit.utils import mount_chainlit
 from datetime import datetime, timezone
 import os
 from state import DASHBOARD_STATES
+from opentelemetry import trace
+
+tracer = trace.get_tracer("api_server")
 
 app = FastAPI(
     title="FinancIA's API",
@@ -167,23 +170,30 @@ async def ping_ws(websocket: WebSocket):
 @app.post("/login", tags=["Autenticação"], summary="Autenticar usuário", response_description="Seta os cookies de autenticação e retorna sucesso")
 def login(req: LoginRequest, response: Response):
     """Recebe CPF e E-mail, valida no banco e estabelece a sessão do usuário definindo um cookie 'auth_cpf'."""
-    # Agora buscamos o hash da senha também
-    clients = execute_query("SELECT cpf, password_hash FROM clients WHERE cpf = %s", (req.cpf,))
-    if not clients:
-        from tools.audit import log_action
-        log_action("LOGIN_FAILED", req.cpf, {"reason": "User not found"})
-        raise HTTPException(status_code=401, detail="CPF ou Senha inválidos.")
-    
-    user_record = clients[0]
-    stored_hash = user_record.get('password_hash')
-    
-    from tools.security import verify_password, create_access_token
-    
-    # Valida se o hash confere com a senha digitada
-    if not stored_hash or not verify_password(req.password, stored_hash):
-        from tools.audit import log_action
-        log_action("LOGIN_FAILED", req.cpf, {"reason": "Invalid password"})
-        raise HTTPException(status_code=401, detail="CPF ou Senha inválidos.")
+    with tracer.start_as_current_span("processar-login") as span:
+        span.set_attribute("usuario.cpf", req.cpf)
+        
+        # Agora buscamos o hash da senha também
+        clients = execute_query("SELECT cpf, password_hash FROM clients WHERE cpf = %s", (req.cpf,))
+        if not clients:
+            from tools.audit import log_action
+            log_action("LOGIN_FAILED", req.cpf, {"reason": "User not found"})
+            span.set_attribute("login.sucesso", False)
+            raise HTTPException(status_code=401, detail="CPF ou Senha inválidos.")
+        
+        user_record = clients[0]
+        stored_hash = user_record.get('password_hash')
+        
+        from tools.security import verify_password, create_access_token
+        
+        # Valida se o hash confere com a senha digitada
+        if not stored_hash or not verify_password(req.password, stored_hash):
+            from tools.audit import log_action
+            log_action("LOGIN_FAILED", req.cpf, {"reason": "Invalid password"})
+            span.set_attribute("login.sucesso", False)
+            raise HTTPException(status_code=401, detail="CPF ou Senha inválidos.")
+            
+        span.set_attribute("login.sucesso", True)
     
     # Reseta a visibilidade do dashboard no login
     DASHBOARD_STATES[req.cpf] = False
