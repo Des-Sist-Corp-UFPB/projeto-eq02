@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 # Tratamento Global de Exceções Genéricas (500)
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Erro global não tratado: {exc}")
+    logger.error("Erro global não tratado", exc_info=exc, extra={"rota": request.url.path, "metodo": request.method})
     return JSONResponse(
         status_code=500,
         content={"detail": "Ocorreu um erro interno no servidor.", "error": str(exc)},
@@ -140,6 +140,11 @@ def dashboard_data(request: Request):
         }
     }
 
+
+@app.get("/bug", tags=["Health"], summary="Gerar Erro para Logs", description="Endpoint criado para demonstrar a coleta de erros estruturados no OpenTelemetry (Loki).")
+def provoke_bug():
+    """Lança um erro proposital."""
+    raise ValueError("Erro intencional provocado para o exercício de Logs no Loki.")
 
 @app.get("/ping", tags=["Health"], summary="Verificação de Saúde (Simples)", response_description="Retorna status OK e a hora atual")
 async def ping():

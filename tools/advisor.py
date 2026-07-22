@@ -3,11 +3,13 @@ from fastmcp import FastMCP
 from typing import Optional, Dict
 from datetime import datetime, timedelta
 import time
+import logging
 from opentelemetry import trace
 from tools.clients import _get_client_internal
 from tools.db import execute_query
 
 tracer = trace.get_tracer("advisor")
+logger = logging.getLogger(__name__)
 
 mcp = FastMCP("advisor")
 
@@ -112,6 +114,7 @@ def analisar_fluxo_caixa(cpf: str) -> dict:
     """Analisa os gastos focando apenas nas parcelas ou despesas integrais que incidem no mês vigente."""
     with tracer.start_as_current_span("analise-fluxo-caixa-50-30-20") as span:
         span.set_attribute("usuario.cpf", cpf)
+        logger.info("Iniciando análise de fluxo de caixa", extra={"usuario.cpf": cpf, "acao": "analisar_fluxo"})
         time.sleep(0.5) # Gargalo proposital para o trace de 500ms
         
         client = _get_client_internal(cpf)
