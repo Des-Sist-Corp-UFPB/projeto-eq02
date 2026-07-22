@@ -13,6 +13,7 @@ Através de uma interface híbrida, a IA controla dinamicamente o que o usuário
 *   **Migrations:** Alembic
 *   **Orquestração de Processos:** Supervisord (Garante que a API e o servidor MCP subam no mesmo container de forma segura)
 *   **Containerização:** Docker e Docker Compose
+*   **Observabilidade:** OpenTelemetry (instrumentação automática), exportando Traces e Logs para central OTLP (Grafana / Tempo / Loki)
 
 ### Inteligência Artificial e LLM
 *   **Orquestração de Agente:** LangGraph (StateGraph) e LangChain
