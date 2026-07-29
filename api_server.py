@@ -84,9 +84,7 @@ class DashboardStateRequest(BaseModel):
 @app.get("/", tags=["Frontend"], summary="Redireciona para o login")
 def root():
     """Redireciona o usuário para a página estática de login."""
-    # O sufixo de versão evita que proxies e navegadores reutilizem uma versão
-    # antiga da página após atualizações visuais.
-    return RedirectResponse(url="/static/login.html?v=2")
+    return RedirectResponse(url="/static/acesso.html")
 
 @app.get("/hibrido", tags=["Frontend"], summary="Página Principal")
 def get_hibrido():
