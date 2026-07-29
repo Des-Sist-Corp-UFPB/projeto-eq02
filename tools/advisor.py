@@ -21,31 +21,26 @@ NECESSIDADES = {
 FUTURO = {"Investimento", "Reserva", "Poupança", "Aposentadoria"}
 
 @mcp.tool()
-def simular_investimento(valor_mensal: float, meses: int, taxa_anual_porcentagem: float = 10.0) -> dict:
-    """Calcula o montante final de um investimento com aportes mensais usando juros compostos."""
-    import json
+def simular_investimento(valor_inicial: float, meses: int, taxa_anual_porcentagem: float = 10.0) -> dict:
+    """Calcula quanto um aporte inicial único renderá usando juros compostos, sem novos aportes mensais."""
     taxa_mensal = (taxa_anual_porcentagem / 100) / 12
-    montante = 0.0
-    investido = 0.0
-    hist_montante = []
-    hist_investido = []
-    
-    for _ in range(meses):
-        investido += valor_mensal
-        montante = (montante + valor_mensal) * (1 + taxa_mensal)
-        hist_montante.append(round(montante, 2))
-        hist_investido.append(round(investido, 2))
+    hist_montante = [
+        round(valor_inicial * ((1 + taxa_mensal) ** mes), 2)
+        for mes in range(0, meses + 1)
+    ]
+    montante = hist_montante[-1]
         
     return {
         "montante_final": round(montante, 2), 
-        "total_investido": round(investido, 2),
+        "total_investido": round(valor_inicial, 2),
+        "rendimento_total": round(montante - valor_inicial, 2),
         "projecao_mensal": {
             "meses": list(range(0, meses + 1)),
-            "total_aportado": [0.0] + hist_investido,
+            "total_aportado": [round(valor_inicial, 2)] * (meses + 1),
             "opcoes": [
                 {
                     "nome": f"Projeção a {taxa_anual_porcentagem:.2f}% a.a.",
-                    "valores": [0.0] + hist_montante,
+                    "valores": hist_montante,
                 }
             ],
         },
@@ -55,7 +50,7 @@ def simular_investimento(valor_mensal: float, meses: int, taxa_anual_porcentagem
 @mcp.tool()
 def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False, cpf: str = "", meses_simulacao: int = 12) -> dict:
     """
-    Retorna opções de investimentos e rentabilidades projetadas.
+    Retorna opções e projeta quanto um aporte inicial único pode valer, sem presumir novos aportes mensais.
     - OBRIGATÓRIO: Se o usuário disser EXPLICITAMENTE um valor para investir (ex: "quero investir 500", "tenho 500 reais para investir"), você DEVE passar aplicar_regra_inteligente=False e valor=500. Neste caso, NÃO tente adaptar ou calcular frações.
     - OBRIGATÓRIO: SÓ passe aplicar_regra_inteligente=True se o usuário pedir algo genérico como "o que faço com o meu dinheiro que sobrou?", "sugira investimentos", "onde invisto?". Nesse caso, passe como 'valor' o saldo livre total que ele tem no fluxo de caixa atual. Você DEVE fornecer o 'cpf' neste caso.
     """
@@ -72,26 +67,26 @@ def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False,
         meta_ideal = renda * 0.20
         
         if renda > 0 and valor >= meta_ideal:
-            valor_mensal = meta_ideal
-            reserva = valor - valor_mensal
+            aporte_inicial = meta_ideal
+            reserva = valor - aporte_inicial
             analise_estrategica = f"Seu salário é R$ {renda:.2f} e você tem R$ {valor:.2f} livres. A meta (20% da renda) é R$ {meta_ideal:.2f}. Como você tem folga, foquei a simulação na meta ideal e ainda te deixei R$ {reserva:.2f} para imprevistos e lazer."
         else:
-            valor_mensal = valor * 0.40
+            aporte_inicial = valor * 0.40
             reserva = valor * 0.60
             if renda > 0:
-                analise_estrategica = f"A meta ideal seria R$ {meta_ideal:.2f} (20% da sua renda), mas como seu saldo livre atual é R$ {valor:.2f}, precisei adaptar a estratégia. Reservei 60% (R$ {reserva:.2f}) para o seu dia a dia e foquei em investir os 40% restantes (R$ {valor_mensal:.2f})."
+                analise_estrategica = f"A meta ideal seria R$ {meta_ideal:.2f} (20% da sua renda), mas como seu saldo livre atual é R$ {valor:.2f}, precisei adaptar a estratégia. Reservei 60% (R$ {reserva:.2f}) para o seu dia a dia e usei os 40% restantes (R$ {aporte_inicial:.2f}) como aporte inicial único."
             else:
-                analise_estrategica = f"Dos R$ {valor:.2f} livres no mês, reservei inteligentemente 60% (R$ {reserva:.2f}) para imprevistos. As simulações abaixo usam os 40% restantes (R$ {valor_mensal:.2f}) para investimentos."
+                analise_estrategica = f"Dos R$ {valor:.2f} livres no mês, reservei inteligentemente 60% (R$ {reserva:.2f}) para imprevistos. As simulações abaixo usam os 40% restantes (R$ {aporte_inicial:.2f}) como aporte inicial único."
     else:
-        valor_mensal = valor
-        analise_estrategica = f"Com aportes fixos de R$ {valor_mensal:.2f} por {meses_simulacao} meses, eis as projeções para algumas carteiras de investimentos:"
+        aporte_inicial = valor
+        analise_estrategica = f"Aplicando R$ {aporte_inicial:.2f} uma única vez e mantendo o valor investido por {meses_simulacao} meses, eis as projeções:"
     
-    if valor_mensal <= 500:
+    if aporte_inicial <= 500:
         opcoes = [
             {"tipo": "Tesouro Selic", "prazo": "Curto Prazo / Reserva", "taxa_anual": 10.5, "rentabilidade_esperada": "~10.5% ao ano", "risco": "Baixíssimo"},
             {"tipo": "CDB 100% CDI Liquidez Diária", "prazo": "Curto Prazo / Reserva", "taxa_anual": 10.4, "rentabilidade_esperada": "~10.4% ao ano", "risco": "Baixo (Garantia FGC)"}
         ]
-    elif valor_mensal <= 2000:
+    elif aporte_inicial <= 2000:
         opcoes = [
             {"tipo": "Tesouro IPCA+", "prazo": "Médio Prazo", "taxa_anual": 10.5, "rentabilidade_esperada": "Inflação + ~6% ao ano", "risco": "Baixo"},
             {"tipo": "CDBs Prefixados", "prazo": "Médio Prazo (1 a 3 anos)", "taxa_anual": 11.5, "rentabilidade_esperada": "~11% a 12% ao ano", "risco": "Baixo"},
@@ -108,15 +103,11 @@ def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False,
     
     for op in opcoes:
         taxa_mensal = (op["taxa_anual"] / 100) / 12
-        montante = 0.0
-        for _ in range(meses_simulacao):
-            montante = (montante + valor_mensal) * (1 + taxa_mensal)
-        
-        serie_mensal = [0.0]
-        montante_serie = 0.0
-        for _ in range(meses_simulacao):
-            montante_serie = (montante_serie + valor_mensal) * (1 + taxa_mensal)
-            serie_mensal.append(round(montante_serie, 2))
+        serie_mensal = [
+            round(aporte_inicial * ((1 + taxa_mensal) ** mes), 2)
+            for mes in range(0, meses_simulacao + 1)
+        ]
+        montante = serie_mensal[-1]
 
         projecoes_mensais.append({
             "nome": op["tipo"],
@@ -131,7 +122,7 @@ def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False,
         "opcoes_sugeridas": opcoes,
         "projecao_mensal": {
             "meses": list(range(0, meses_simulacao + 1)),
-            "total_aportado": [round(valor_mensal * mes, 2) for mes in range(0, meses_simulacao + 1)],
+            "total_aportado": [round(aporte_inicial, 2)] * (meses_simulacao + 1),
             "opcoes": projecoes_mensais,
         },
         "dica": "Explique as opções de forma clara. O aplicativo renderizará o gráfico com as projeções retornadas."

@@ -57,9 +57,9 @@ def criar_grafico_investimentos(projection):
         x=months,
         y=projection.get("total_aportado", []),
         mode="lines",
-        name="Total aportado",
+        name="Capital inicial",
         line={"color": "#94a3b8", "width": 2, "dash": "dash"},
-        hovertemplate="Mês %{x}<br>Aportado: R$ %{y:,.2f}<extra></extra>",
+        hovertemplate="Mês %{x}<br>Capital investido: R$ %{y:,.2f}<extra></extra>",
     ))
 
     colors = ["#38bdf8", "#a78bfa", "#34d399", "#fbbf24", "#fb7185"]
@@ -84,7 +84,7 @@ def criar_grafico_investimentos(projection):
         plot_bgcolor="#111827",
         legend={"orientation": "h", "y": -0.24, "x": 0},
         margin={"l": 55, "r": 25, "t": 60, "b": 90},
-        height=440,
+        height=560,
     )
     figure.update_xaxes(dtick=1, gridcolor="rgba(148,163,184,0.12)")
     figure.update_yaxes(gridcolor="rgba(148,163,184,0.12)", tickprefix="R$ ")
@@ -266,12 +266,12 @@ async def on_message(message: cl.Message):
     elements_to_show = []
 
     if investment_projection:
-        investment_figure = criar_grafico_investimentos(investment_projection)
         elements_to_show.append(
             cl.Plotly(
                 name="Projeção dos investimentos",
-                figure=investment_figure,
+                figure=criar_grafico_investimentos(investment_projection),
                 display="inline",
+                size="large",
             )
         )
     

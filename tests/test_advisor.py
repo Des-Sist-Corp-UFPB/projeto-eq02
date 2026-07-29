@@ -7,8 +7,9 @@ def test_simular_investimento():
     res = simular_investimento(100.0, 12, 10.0)
     assert "montante_final" in res
     assert "total_investido" in res
-    assert res["total_investido"] == 1200.0
-    assert res["montante_final"] > 1200.0
+    assert res["total_investido"] == 100.0
+    assert res["montante_final"] > 100.0
+    assert res["projecao_mensal"]["total_aportado"] == [100.0] * 13
     assert res["projecao_mensal"]["meses"] == list(range(13))
     assert len(res["projecao_mensal"]["opcoes"][0]["valores"]) == 13
 
