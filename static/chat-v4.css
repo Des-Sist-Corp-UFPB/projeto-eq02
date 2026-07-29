@@ -1,0 +1,152 @@
+:root {
+    --fin-bg: #081321;
+    --fin-surface: #0f1d2f;
+    --fin-surface-soft: #13243a;
+    --fin-border: rgba(148, 163, 184, 0.14);
+    --fin-text: #edf4fb;
+    --fin-muted: #8fa1b7;
+    --fin-primary: #38bdf8;
+}
+
+html,
+body,
+#root {
+    min-height: 100%;
+    background: var(--fin-bg) !important;
+    color: var(--fin-text) !important;
+    font-family: "Inter", system-ui, sans-serif !important;
+}
+
+body {
+    background-image:
+        radial-gradient(circle at 10% 0%, rgba(56, 189, 248, 0.06), transparent 24rem) !important;
+}
+
+header {
+    min-height: 3.75rem !important;
+    border-bottom: 1px solid var(--fin-border) !important;
+    background: rgba(8, 19, 33, 0.94) !important;
+    box-shadow: none !important;
+    backdrop-filter: blur(16px);
+}
+
+header button {
+    border-radius: 0.65rem !important;
+    color: var(--fin-muted) !important;
+}
+
+header button:hover {
+    background: rgba(56, 189, 248, 0.08) !important;
+    color: var(--fin-primary) !important;
+}
+
+main {
+    background: transparent !important;
+}
+
+.prose,
+.prose p,
+.prose li,
+[data-testid="message-content"] {
+    color: #dbe7f3 !important;
+    font-size: 0.94rem !important;
+    line-height: 1.72 !important;
+}
+
+.prose strong {
+    color: #f8fafc !important;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+    color: #f8fafc !important;
+    letter-spacing: -0.025em;
+}
+
+[data-testid="user-message"],
+.user-message {
+    margin-left: auto !important;
+    border: 1px solid rgba(56, 189, 248, 0.16) !important;
+    border-radius: 1rem 1rem 0.3rem 1rem !important;
+    background: rgba(30, 82, 111, 0.34) !important;
+}
+
+[data-testid="assistant-message"],
+.assistant-message {
+    border-radius: 0 1rem 1rem 1rem !important;
+}
+
+textarea {
+    min-height: 3.25rem !important;
+    color: var(--fin-text) !important;
+    caret-color: var(--fin-primary) !important;
+}
+
+textarea::placeholder {
+    color: #65778d !important;
+}
+
+form:has(textarea) {
+    border: 1px solid rgba(148, 163, 184, 0.18) !important;
+    border-radius: 1rem !important;
+    background: rgba(15, 29, 47, 0.96) !important;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.25) !important;
+}
+
+form:has(textarea):focus-within {
+    border-color: rgba(56, 189, 248, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.08), 0 18px 45px rgba(0, 0, 0, 0.25) !important;
+}
+
+form:has(textarea) button {
+    border-radius: 0.7rem !important;
+}
+
+form:has(textarea) button[type="submit"] {
+    background: linear-gradient(135deg, #38bdf8, #0284c7) !important;
+    color: #04121e !important;
+}
+
+[role="dialog"],
+[role="menu"] {
+    border: 1px solid var(--fin-border) !important;
+    background: var(--fin-surface) !important;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4) !important;
+}
+
+code {
+    border: 1px solid var(--fin-border);
+    border-radius: 0.35rem;
+    background: rgba(15, 29, 47, 0.9) !important;
+    color: #bae6fd !important;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: #33465d;
+    background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #49627e;
+    background-clip: padding-box;
+}
+
+@media (max-width: 720px) {
+    .prose,
+    .prose p,
+    .prose li,
+    [data-testid="message-content"] {
+        font-size: 0.9rem !important;
+    }
+}

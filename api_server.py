@@ -89,12 +89,12 @@ def root():
 @app.get("/hibrido", tags=["Frontend"], summary="Página Principal")
 def get_hibrido():
     """Redireciona para a interface híbrida (Chat + Dashboard)."""
-    return RedirectResponse(url="/static/hibrido-v3.html")
+    return RedirectResponse(url="/static/hibrido-v5.html")
 
 @app.get("/dashboard", tags=["Frontend"], summary="Dashboard Isolado")
 def get_dashboard():
     """Redireciona para a interface apenas do dashboard."""
-    return RedirectResponse(url="/static/dashboard-only-v3.html")
+    return RedirectResponse(url="/static/dashboard-only-v5.html")
 
 @app.get("/api/dashboard_data", tags=["Dashboard"], summary="Obter dados financeiros", description="Retorna os dados consolidados do fluxo de caixa e metas do usuário autenticado para alimentar os gráficos.")
 def dashboard_data(request: Request):

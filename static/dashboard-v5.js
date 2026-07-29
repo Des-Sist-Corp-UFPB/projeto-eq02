@@ -2,8 +2,7 @@ const dashboardRoot = document.getElementById('dashboard-root');
 
 dashboardRoot.innerHTML = `
 <div class="dashboard-shell">
-  <div id="dashboard-loading" class="dashboard-state"><div><strong>Organizando seus dados</strong>Preparando sua visão financeira...</div></div>
-  <div id="dashboard-content" hidden>
+  <div id="dashboard-content">
     <header class="dash-heading">
       <div><span class="dash-kicker">Resumo financeiro</span><h1>Visão geral do mês</h1></div>
       <span class="dash-period" id="dash-period">Mês atual</span>
@@ -130,8 +129,6 @@ async function updateDashboard() {
             return;
         }
         const data = await response.json();
-        document.getElementById('dashboard-loading').hidden = true;
-        document.getElementById('dashboard-content').hidden = false;
         document.getElementById('renda-val').textContent = money(data.renda);
         document.getElementById('gasto-val').textContent = money(data.total_gasto);
         document.getElementById('saldo-val').textContent = money(data.saldo_livre);
@@ -142,7 +139,7 @@ async function updateDashboard() {
         renderRule(data);
         controlVisibility(data.show_dashboard);
     } catch (error) {
-        document.getElementById('dashboard-loading').innerHTML = '<div><strong>Não foi possível atualizar</strong>Tentaremos novamente em instantes.</div>';
+        console.error('Não foi possível atualizar o dashboard.', error);
     }
 }
 
