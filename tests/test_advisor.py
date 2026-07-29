@@ -38,12 +38,14 @@ def test_sugerir_investimentos_inteligente(mock_client):
     mock_client.return_value = {"renda_total": 5000.0}
     res = sugerir_investimentos(1500.0, aplicar_regra_inteligente=True, cpf="123")
     assert "analise_estrategica" in res
+    assert res["projecao_mensal"]["total_aportado"] == [1500.0] * 13
     
 @patch("tools.advisor._get_client_internal")
 def test_sugerir_investimentos_inteligente_pouco_valor(mock_client):
     mock_client.return_value = {"renda_total": 5000.0}
     res = sugerir_investimentos(200.0, aplicar_regra_inteligente=True, cpf="123")
     assert "analise_estrategica" in res
+    assert res["projecao_mensal"]["total_aportado"] == [200.0] * 13
 
 @patch("tools.advisor._get_client_internal")
 def test_analisar_fluxo_caixa_nao_encontrado(mock_client):

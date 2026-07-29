@@ -50,36 +50,15 @@ def simular_investimento(valor_inicial: float, meses: int, taxa_anual_porcentage
 @mcp.tool()
 def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False, cpf: str = "", meses_simulacao: int = 12) -> dict:
     """
-    Retorna opções e projeta quanto um aporte inicial único pode valer, sem presumir novos aportes mensais.
-    - OBRIGATÓRIO: Se o usuário disser EXPLICITAMENTE um valor para investir (ex: "quero investir 500", "tenho 500 reais para investir"), você DEVE passar aplicar_regra_inteligente=False e valor=500. Neste caso, NÃO tente adaptar ou calcular frações.
-    - OBRIGATÓRIO: SÓ passe aplicar_regra_inteligente=True se o usuário pedir algo genérico como "o que faço com o meu dinheiro que sobrou?", "sugira investimentos", "onde invisto?". Nesse caso, passe como 'valor' o saldo livre total que ele tem no fluxo de caixa atual. Você DEVE fornecer o 'cpf' neste caso.
+    Retorna opções e projeta exatamente o valor recebido como aporte inicial único.
+    O parâmetro valor nunca é reduzido, fracionado ou adaptado pela renda.
+    `aplicar_regra_inteligente` é mantido apenas por compatibilidade e não altera o aporte.
     """
     if valor <= 0:
         return {"recomendacao": "O valor informado não é suficiente para realizar aportes."}
-        
-    if aplicar_regra_inteligente:
-        renda = 0.0
-        if cpf:
-            client = _get_client_internal(cpf)
-            if client:
-                renda = float(client.get("renda_total", 0.0))
-                
-        meta_ideal = renda * 0.20
-        
-        if renda > 0 and valor >= meta_ideal:
-            aporte_inicial = meta_ideal
-            reserva = valor - aporte_inicial
-            analise_estrategica = f"Seu salário é R$ {renda:.2f} e você tem R$ {valor:.2f} livres. A meta (20% da renda) é R$ {meta_ideal:.2f}. Como você tem folga, foquei a simulação na meta ideal e ainda te deixei R$ {reserva:.2f} para imprevistos e lazer."
-        else:
-            aporte_inicial = valor * 0.40
-            reserva = valor * 0.60
-            if renda > 0:
-                analise_estrategica = f"A meta ideal seria R$ {meta_ideal:.2f} (20% da sua renda), mas como seu saldo livre atual é R$ {valor:.2f}, precisei adaptar a estratégia. Reservei 60% (R$ {reserva:.2f}) para o seu dia a dia e usei os 40% restantes (R$ {aporte_inicial:.2f}) como aporte inicial único."
-            else:
-                analise_estrategica = f"Dos R$ {valor:.2f} livres no mês, reservei inteligentemente 60% (R$ {reserva:.2f}) para imprevistos. As simulações abaixo usam os 40% restantes (R$ {aporte_inicial:.2f}) como aporte inicial único."
-    else:
-        aporte_inicial = valor
-        analise_estrategica = f"Aplicando R$ {aporte_inicial:.2f} uma única vez e mantendo o valor investido por {meses_simulacao} meses, eis as projeções:"
+
+    aporte_inicial = valor
+    analise_estrategica = f"Aplicando exatamente R$ {aporte_inicial:.2f} uma única vez e mantendo o valor investido por {meses_simulacao} meses, eis as projeções:"
     
     if aporte_inicial <= 500:
         opcoes = [
