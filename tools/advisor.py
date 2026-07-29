@@ -21,8 +21,8 @@ NECESSIDADES = {
 FUTURO = {"Investimento", "Reserva", "Poupança", "Aposentadoria"}
 
 @mcp.tool()
-def simular_investimento(valor_inicial: float, meses: int, taxa_anual_porcentagem: float = 10.0) -> dict:
-    """Calcula quanto um aporte inicial único renderá usando juros compostos, sem novos aportes mensais."""
+def simular_investimento(valor_inicial: float, meses: int, taxa_anual_porcentagem: float = 10.0, nome_opcao: str = "") -> dict:
+    """Projeta um aporte inicial único. Ao comparar opções, informe nome_opcao para identificar a linha do gráfico."""
     taxa_mensal = (taxa_anual_porcentagem / 100) / 12
     hist_montante = [
         round(valor_inicial * ((1 + taxa_mensal) ** mes), 2)
@@ -39,7 +39,7 @@ def simular_investimento(valor_inicial: float, meses: int, taxa_anual_porcentage
             "total_aportado": [round(valor_inicial, 2)] * (meses + 1),
             "opcoes": [
                 {
-                    "nome": f"Projeção a {taxa_anual_porcentagem:.2f}% a.a.",
+                    "nome": nome_opcao.strip() or f"Projeção a {taxa_anual_porcentagem:.2f}% a.a.",
                     "valores": hist_montante,
                 }
             ],

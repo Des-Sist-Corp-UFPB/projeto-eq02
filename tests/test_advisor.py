@@ -4,7 +4,7 @@ from unittest.mock import patch
 from tools.advisor import simular_investimento, sugerir_investimentos, analisar_fluxo_caixa
 
 def test_simular_investimento():
-    res = simular_investimento(100.0, 12, 10.0)
+    res = simular_investimento(100.0, 12, 10.0, nome_opcao="Teste 10%")
     assert "montante_final" in res
     assert "total_investido" in res
     assert res["total_investido"] == 100.0
@@ -12,6 +12,7 @@ def test_simular_investimento():
     assert res["projecao_mensal"]["total_aportado"] == [100.0] * 13
     assert res["projecao_mensal"]["meses"] == list(range(13))
     assert len(res["projecao_mensal"]["opcoes"][0]["valores"]) == 13
+    assert res["projecao_mensal"]["opcoes"][0]["nome"] == "Teste 10%"
 
 def test_sugerir_investimentos_zero():
     res = sugerir_investimentos(0.0)

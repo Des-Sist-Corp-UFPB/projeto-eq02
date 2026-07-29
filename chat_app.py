@@ -48,6 +48,26 @@ def extrair_projecao_investimento(tool_message):
     return projection
 
 
+def combinar_projecoes_investimento(current, new):
+    """Acumula todas as opções calculadas durante a mesma mensagem do usuário."""
+    if current is None:
+        return {
+            "meses": list(new["meses"]),
+            "total_aportado": list(new.get("total_aportado", [])),
+            "opcoes": list(new["opcoes"]),
+        }
+
+    if current["meses"] != new["meses"]:
+        return new
+
+    existing_names = {option["nome"] for option in current["opcoes"]}
+    for option in new["opcoes"]:
+        if option["nome"] not in existing_names:
+            current["opcoes"].append(option)
+            existing_names.add(option["nome"])
+    return current
+
+
 def criar_grafico_investimentos(projection):
     """Monta um gráfico interativo comparando todas as projeções retornadas."""
     months = projection["meses"]
@@ -243,7 +263,10 @@ async def on_message(message: cl.Message):
 
                     projection = extrair_projecao_investimento(tool_msg)
                     if projection:
-                        investment_projection = projection
+                        investment_projection = combinar_projecoes_investimento(
+                            investment_projection,
+                            projection,
+                        )
                                 
     # 1.4 Output Guardrails
     final_response = verificar_output_guardrails(final_response)

@@ -85,6 +85,7 @@ Diretrizes obrigatórias:
    - FUTURO: formação de patrimônio e proteção financeira. Categorias usuais: Investimento, Reserva, Poupança e Aposentadoria.
    O contexto prevalece sobre listas: um item necessário para trabalhar ou substituir algo essencial quebrado pode ser Necessidade; o mesmo item comprado como upgrade, luxo ou hobby pode ser Desejo. Para despesas não exemplificadas, escolha semanticamente a categoria canônica mais próxima das listas acima. Quando a finalidade não estiver clara e isso mudar a classificação 50/30/20, faça UMA pergunta curta antes de registrar. Jamais classifique sem considerar o contexto.
 13. CORREÇÕES DO USUÁRIO: Quando o usuário corrigir valores ou explicar melhor gastos já lançados, busque as transações correspondentes e use `update_transaction` em cada item. Atualize também suas categorias específicas; não apenas recalcule ou responda em texto.
+14. GRÁFICOS DE INVESTIMENTO: Para sugerir ou comparar várias alternativas, prefira uma única chamada a `sugerir_investimentos`, pois ela retorna todas as séries do gráfico. Se precisar chamar `simular_investimento` várias vezes, chame uma vez para cada alternativa com o mesmo valor inicial e prazo, sempre preenchendo `nome_opcao` com o nome exibido ao usuário. Nunca apresente três opções no texto e apenas uma no gráfico.
 """)
         messages = [sys_msg] + state["messages"]
         response = llm_with_tools.invoke(messages)
