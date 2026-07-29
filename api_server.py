@@ -150,12 +150,23 @@ def provoke_bug():
 
 @app.get("/ping", tags=["Health"], summary="Verificação de Saúde (Simples)", response_description="Retorna status OK e a hora atual")
 async def ping():
-    """Endpoint de health check usado por sistemas de monitoramento."""
-    return {
-        "status": "ok",
+    """Verifica se a API e sua conexão com o PostgreSQL estão saudáveis."""
+    response = {
         "service": "eq02",
-        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
+
+    try:
+        database_result = execute_query("SELECT 1 AS health")
+        if not database_result or database_result[0].get("health") != 1:
+            raise RuntimeError("O PostgreSQL não respondeu corretamente ao health check.")
+
+        response.update({"status": "ok", "database": "ok"})
+        return response
+    except Exception:
+        logger.exception("Falha no health check do PostgreSQL")
+        response.update({"status": "error", "database": "error"})
+        return JSONResponse(status_code=500, content=response)
 
 @app.get("/health", tags=["Health"], summary="Verificação de Saúde Detalhada")
 async def health():

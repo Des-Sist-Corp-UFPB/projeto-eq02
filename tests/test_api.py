@@ -1,11 +1,30 @@
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 
-def test_ping(client: TestClient):
-    """Teste básico para verificar se o healthcheck simples está respondendo."""
+@patch("api_server.execute_query")
+def test_ping(mock_query, client: TestClient):
+    """O healthcheck retorna sucesso quando o PostgreSQL responde."""
+    mock_query.return_value = [{"health": 1}]
+
     response = client.get("/ping")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+    assert response.json()["database"] == "ok"
+    assert response.json()["service"] == "eq02"
+    assert "timestamp" in response.json()
+    mock_query.assert_called_once_with("SELECT 1 AS health")
+
+
+@patch("api_server.execute_query")
+def test_ping_database_error(mock_query, client: TestClient):
+    """O healthcheck retorna 500 quando o PostgreSQL está indisponível."""
+    mock_query.return_value = []
+
+    response = client.get("/ping")
+    assert response.status_code == 500
+    assert response.json()["status"] == "error"
+    assert response.json()["database"] == "error"
+    assert response.json()["service"] == "eq02"
     assert "timestamp" in response.json()
 
 def test_health(client: TestClient):
