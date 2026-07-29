@@ -84,12 +84,12 @@ class DashboardStateRequest(BaseModel):
 @app.get("/", tags=["Frontend"], summary="Redireciona para o login")
 def root():
     """Redireciona o usuário para a página estática de login."""
-    return RedirectResponse(url="/static/acesso.html")
+    return RedirectResponse(url="/static/acesso-v2.html")
 
 @app.get("/hibrido", tags=["Frontend"], summary="Página Principal")
 def get_hibrido():
     """Redireciona para a interface híbrida (Chat + Dashboard)."""
-    return RedirectResponse(url="/static/hibrido.html")
+    return RedirectResponse(url="/static/hibrido-v2.html")
 
 @app.get("/dashboard", tags=["Frontend"], summary="Dashboard Isolado")
 def get_dashboard():

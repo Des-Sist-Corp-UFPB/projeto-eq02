@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#07111f">
-    <title>Entrar | FinancIA's</title>
+    <title>Criar conta | FinancIA's</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/auth.css">
+    <link rel="stylesheet" href="/static/auth-v2.css">
 </head>
 <body>
     <main class="auth-shell">
@@ -23,17 +23,17 @@
             </a>
 
             <div class="brand-copy">
-                <span class="eyebrow">Inteligência para suas finanças</span>
-                <h1>Seu dinheiro, mais <span>claro.</span></h1>
-                <p>Organize gastos, acompanhe seu mês e tome decisões melhores com um assistente financeiro que entende o seu contexto.</p>
-                <div class="feature-row" aria-label="Recursos principais">
-                    <span class="feature-pill">Visão financeira completa</span>
-                    <span class="feature-pill">Orientação personalizada</span>
-                    <span class="feature-pill">Dados protegidos</span>
+                <span class="eyebrow">Comece pelo que importa</span>
+                <h1>Uma nova visão do seu <span>futuro.</span></h1>
+                <p>Crie sua conta e transforme informações do dia a dia em um planejamento financeiro simples, visual e personalizado.</p>
+                <div class="feature-row" aria-label="Benefícios">
+                    <span class="feature-pill">Cadastro rápido</span>
+                    <span class="feature-pill">Experiência personalizada</span>
+                    <span class="feature-pill">Controle em um só lugar</span>
                 </div>
             </div>
 
-            <span class="brand-footer">Planejamento simples. Decisões conscientes.</span>
+            <span class="brand-footer">Seu planejamento começa com clareza.</span>
         </section>
 
         <section class="form-panel">
@@ -47,27 +47,43 @@
                     FinancIA's
                 </a>
 
-                <h2>Bem-vindo de volta</h2>
-                <p class="auth-subtitle">Entre para acessar seu assistente e acompanhar sua vida financeira.</p>
+                <h2>Crie sua conta</h2>
+                <p class="auth-subtitle">Leva menos de um minuto. Depois, seu assistente ajuda a organizar os próximos passos.</p>
 
-                <form id="loginForm" class="form-grid" novalidate>
+                <form id="registerForm" class="form-grid" novalidate>
+                    <div class="field">
+                        <label for="nome">Nome completo</label>
+                        <div class="input-wrap">
+                            <input type="text" id="nome" name="nome" autocomplete="name"
+                                placeholder="Como podemos chamar você?" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="email">E-mail</label>
+                        <div class="input-wrap">
+                            <input type="email" id="email" name="email" autocomplete="email"
+                                placeholder="voce@exemplo.com" required>
+                        </div>
+                    </div>
+
                     <div class="field">
                         <label for="cpf">CPF</label>
                         <div class="input-wrap">
                             <input type="text" id="cpf" name="cpf" inputmode="numeric" autocomplete="username"
                                 placeholder="000.000.000-00" maxlength="14" required aria-describedby="cpfHint">
                         </div>
-                        <p class="field-hint" id="cpfHint">Digite apenas os 11 números do seu CPF.</p>
+                        <p class="field-hint" id="cpfHint">Usaremos o CPF apenas para identificar sua conta.</p>
                     </div>
 
                     <div class="field">
                         <label for="password">Senha</label>
                         <div class="input-wrap">
-                            <input type="password" id="password" name="password" autocomplete="current-password"
-                                placeholder="Digite sua senha" required>
+                            <input type="password" id="password" name="password" autocomplete="new-password"
+                                placeholder="Mínimo de 6 caracteres" minlength="6" required>
                             <button class="input-action" type="button" data-toggle-password="password"
                                 aria-label="Mostrar senha" title="Mostrar senha">
-                                <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/>
                                     <circle cx="12" cy="12" r="3"/>
                                 </svg>
@@ -79,25 +95,17 @@
 
                     <button class="submit-button" type="submit">
                         <span class="spinner" aria-hidden="true"></span>
-                        <span class="button-label">Entrar na minha conta</span>
+                        <span class="button-label">Criar minha conta</span>
                     </button>
                 </form>
 
-                <p class="auth-switch">Ainda não tem uma conta? <a href="/static/register.html">Criar conta</a></p>
-
-                <details class="demo-access">
-                    <summary>Acesso de demonstração</summary>
-                    <div class="demo-access-content">
-                        <div class="demo-value"><span>CPF</span>10203040506</div>
-                        <div class="demo-value"><span>Senha</span>admin123</div>
-                    </div>
-                </details>
+                <p class="auth-switch">Já possui uma conta? <a href="/static/acesso-v2.html">Fazer login</a></p>
             </div>
         </section>
     </main>
 
     <script>
-        const form = document.getElementById('loginForm');
+        const form = document.getElementById('registerForm');
         const cpfInput = document.getElementById('cpf');
         const messageBox = document.getElementById('formMessage');
         const submitButton = form.querySelector('.submit-button');
@@ -113,15 +121,16 @@
                 .replace(/\.(\d{3})(\d)/, '.$1-$2');
         };
 
-        const showMessage = (text) => {
+        const showMessage = (text, success = false) => {
             messageBox.textContent = text;
+            messageBox.classList.toggle('success', success);
             messageBox.classList.add('visible');
         };
 
         const setLoading = (loading) => {
             submitButton.disabled = loading;
             submitButton.classList.toggle('loading', loading);
-            buttonLabel.textContent = loading ? 'Entrando...' : 'Entrar na minha conta';
+            buttonLabel.textContent = loading ? 'Criando conta...' : 'Criar minha conta';
         };
 
         cpfInput.addEventListener('input', () => {
@@ -143,8 +152,22 @@
             event.preventDefault();
             messageBox.classList.remove('visible', 'success');
 
+            const nome = document.getElementById('nome').value.trim();
+            const email = document.getElementById('email').value.trim();
             const cpf = onlyDigits(cpfInput.value);
             const password = document.getElementById('password').value;
+
+            if (nome.length < 2) {
+                showMessage('Informe seu nome para continuar.');
+                document.getElementById('nome').focus();
+                return;
+            }
+
+            if (!document.getElementById('email').checkValidity()) {
+                showMessage('Informe um endereço de e-mail válido.');
+                document.getElementById('email').focus();
+                return;
+            }
 
             if (cpf.length !== 11) {
                 showMessage('Informe um CPF com 11 números.');
@@ -152,8 +175,8 @@
                 return;
             }
 
-            if (!password) {
-                showMessage('Digite sua senha para continuar.');
+            if (password.length < 6) {
+                showMessage('Sua senha precisa ter pelo menos 6 caracteres.');
                 document.getElementById('password').focus();
                 return;
             }
@@ -161,35 +184,22 @@
             setLoading(true);
 
             try {
-                const response = await fetch('/login', {
+                const response = await fetch('/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ cpf, password })
+                    body: JSON.stringify({ nome, cpf, email, password })
                 });
                 const data = await response.json();
 
                 if (!response.ok) {
-                    showMessage(data.detail || 'Não foi possível entrar. Verifique seus dados.');
+                    showMessage(data.detail || 'Não foi possível criar sua conta.');
                     return;
                 }
 
-                document.cookie = `auth_cpf=${cpf}; path=/; SameSite=Lax`;
-                localStorage.clear();
-                sessionStorage.clear();
-
-                if (window.indexedDB && indexedDB.databases) {
-                    const databases = await indexedDB.databases();
-                    databases.forEach((database) => {
-                        if (database.name) indexedDB.deleteDatabase(database.name);
-                    });
-                } else if (window.indexedDB) {
-                    indexedDB.deleteDatabase('chainlit');
-                    indexedDB.deleteDatabase('localforage');
-                }
-
+                showMessage('Conta criada! Redirecionando você para o login...', true);
                 window.setTimeout(() => {
-                    window.location.href = data.redirect || '/hibrido';
-                }, 120);
+                    window.location.href = '/static/acesso-v2.html';
+                }, 1100);
             } catch (error) {
                 showMessage('Não foi possível conectar ao servidor. Tente novamente em instantes.');
             } finally {
