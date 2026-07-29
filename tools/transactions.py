@@ -6,9 +6,65 @@ from tools.advisor import analisar_fluxo_caixa
 
 mcp = FastMCP("transactions")
 
+NECESSITY_KEYWORDS = {
+    "alimentação": ("feira", "mercado", "supermercado", "alimento", "comida"),
+    "moradia": ("aluguel", "condomínio", "energia", "luz", "água", "gás"),
+    "saúde": ("farmácia", "remédio", "consulta", "exame", "hospital"),
+    "transporte": ("combustível", "gasolina", "ônibus", "transporte", "uber"),
+    "educação": ("curso", "faculdade", "escola", "livro didático"),
+    "comunicação": ("internet", "telefone", "plano móvel"),
+    "manutenção": ("conserto", "concerto", "reparo", "manutenção"),
+}
+
+WISH_KEYWORDS = {
+    "lazer": ("streaming", "netflix", "spotify", "cinema", "show", "passeio"),
+    "restaurantes": ("restaurante", "delivery", "ifood", "lanche"),
+    "compras pessoais": ("roupa", "calçado", "tênis", "perfume", "acessório"),
+}
+
+FUTURE_KEYWORDS = {
+    "investimento": ("investimento", "aporte", "tesouro", "cdb", "ação", "etf"),
+    "reserva": ("reserva de emergência", "reserva"),
+    "poupança": ("poupança",),
+}
+
+
+def categorizar_transacao(category: str, description: str) -> str:
+    """Normaliza a categoria usando a descrição como evidência principal."""
+    texto = f"{category or ''} {description or ''}".lower()
+    categoria_normalizada = (category or "").strip()
+    categorias_permitidas = {
+        "alimentação", "moradia", "saúde", "transporte", "educação",
+        "comunicação", "tecnologia", "manutenção", "seguros", "impostos",
+        "dívidas", "cuidados pessoais", "dependentes", "lazer",
+        "entretenimento", "restaurantes", "compras pessoais", "viagens",
+        "hobbies", "presentes", "doações", "investimento", "reserva",
+        "poupança", "aposentadoria",
+    }
+
+    # Uma categoria canônica e específica escolhida com contexto pelo agente
+    # prevalece sobre heurísticas textuais.
+    if categoria_normalizada.lower() in categorias_permitidas:
+        return categoria_normalizada.title()
+
+    for categoria, palavras in FUTURE_KEYWORDS.items():
+        if any(palavra in texto for palavra in palavras):
+            return categoria.title()
+
+    for categoria, palavras in NECESSITY_KEYWORDS.items():
+        if any(palavra in texto for palavra in palavras):
+            return categoria.title()
+
+    for categoria, palavras in WISH_KEYWORDS.items():
+        if any(palavra in texto for palavra in palavras):
+            return categoria.title()
+
+    return "Outros"
+
+
 @mcp.tool()
 def add_transaction(cpf: str, amount: float, category: str, description: str, date: str, installments: int = 1, status: str = 'paid', is_recurring: bool = False) -> dict:
-    """Registra uma transacao (gasto) ou uma conta a pagar para o cliente. Use status='pending' para contas futuras."""
+    """Registra um gasto ou conta. Envie uma categoria específica por item; nunca agrupe despesas diferentes como 'Compras'."""
     client = _get_client_internal(cpf)
     if not client:
         return {"error": f"Cliente com CPF {cpf} não encontrado."}
@@ -18,6 +74,8 @@ def add_transaction(cpf: str, amount: float, category: str, description: str, da
     
     if status.lower() == 'pendente': status = 'pending'
     elif status.lower() == 'pago': status = 'paid'
+
+    category = categorizar_transacao(category, description)
 
     sql = """INSERT INTO transactions (client_id, amount, installments, category, description, transaction_date, status, is_recurring)
              VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING *"""
@@ -61,14 +119,17 @@ def update_transaction(transaction_id: str, amount: float = None, category: str 
     """Atualiza uma transação ou conta existente. Permite marcar uma conta como paga alterando o status para 'paid'. O agente deve usar query_transactions para encontrar o transaction_id antes de atualizar."""
     updates = []
     params = []
+    current = execute_query(
+        "SELECT category, description FROM transactions WHERE id = %s",
+        (transaction_id,),
+        fetch_one=True,
+    )
+    current_data = current[0] if current else {}
     if amount is not None:
         if amount < 0:
             return {"error": "ERRO DE SEGURANÇA: O valor (amount) não pode ser negativo. Transações devem ser registradas com valor absoluto positivo. Corrija o parâmetro e tente novamente."}
         updates.append("amount = %s")
         params.append(amount)
-    if category is not None:
-        updates.append("category = %s")
-        params.append(category)
     if description is not None:
         updates.append("description = %s")
         params.append(description)
@@ -84,6 +145,15 @@ def update_transaction(transaction_id: str, amount: float = None, category: str 
     if is_recurring is not None:
         updates.append("is_recurring = %s")
         params.append(is_recurring)
+
+    # Toda atualização também revisa a categoria. Isso corrige registros antigos
+    # classificados genericamente como "Compras", mesmo quando só o valor mudou.
+    description_for_category = description if description is not None else current_data.get("description", "")
+    category_for_normalization = category if category is not None else current_data.get("category", "")
+    normalized_category = categorizar_transacao(category_for_normalization, description_for_category)
+    if normalized_category and normalized_category != current_data.get("category"):
+        updates.append("category = %s")
+        params.append(normalized_category)
         
     if not updates:
         return {"error": "Nenhum dado fornecido para atualização."}

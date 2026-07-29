@@ -13,6 +13,13 @@ logger = logging.getLogger(__name__)
 
 mcp = FastMCP("advisor")
 
+NECESSIDADES = {
+    "Moradia", "Alimentação", "Saúde", "Transporte", "Educação",
+    "Comunicação", "Tecnologia", "Manutenção", "Seguros", "Impostos",
+    "Dívidas", "Cuidados Pessoais", "Dependentes",
+}
+FUTURO = {"Investimento", "Reserva", "Poupança", "Aposentadoria"}
+
 @mcp.tool()
 def simular_investimento(valor_mensal: float, meses: int, taxa_anual_porcentagem: float = 10.0) -> dict:
     """Calcula o montante final de um investimento com aportes mensais usando juros compostos."""
@@ -165,8 +172,8 @@ def analisar_fluxo_caixa(cpf: str) -> dict:
         "burn_rate_porcentagem": round(burn_rate, 2),
         "gastos_por_categoria": {k: round(v, 2) for k, v in gastos_por_categoria.items()},
         "regra_50_30_20": {
-            "Necessidades": round(sum(v for k, v in gastos_por_categoria.items() if k in ['Moradia', 'Alimentação', 'Saúde', 'Transporte', 'Educação']), 2),
-            "Desejos": round(sum(v for k, v in gastos_por_categoria.items() if k not in ['Moradia', 'Alimentação', 'Saúde', 'Transporte', 'Educação', 'Investimento', 'Reserva', 'Poupança']), 2),
-            "Futuro": round(sum(v for k, v in gastos_por_categoria.items() if k in ['Investimento', 'Reserva', 'Poupança']), 2)
+            "Necessidades": round(sum(v for k, v in gastos_por_categoria.items() if k in NECESSIDADES), 2),
+            "Desejos": round(sum(v for k, v in gastos_por_categoria.items() if k not in NECESSIDADES | FUTURO), 2),
+            "Futuro": round(sum(v for k, v in gastos_por_categoria.items() if k in FUTURO), 2)
         }
     }
