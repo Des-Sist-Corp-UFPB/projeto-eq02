@@ -9,6 +9,8 @@ def test_simular_investimento():
     assert "total_investido" in res
     assert res["total_investido"] == 1200.0
     assert res["montante_final"] > 1200.0
+    assert res["projecao_mensal"]["meses"] == list(range(13))
+    assert len(res["projecao_mensal"]["opcoes"][0]["valores"]) == 13
 
 def test_sugerir_investimentos_zero():
     res = sugerir_investimentos(0.0)
@@ -18,6 +20,8 @@ def test_sugerir_investimentos_baixo():
     res = sugerir_investimentos(300.0)
     assert "analise_estrategica" in res
     assert len(res["opcoes_sugeridas"]) == 2
+    assert len(res["projecao_mensal"]["opcoes"]) == 2
+    assert len(res["projecao_mensal"]["meses"]) == 13
 
 def test_sugerir_investimentos_medio():
     res = sugerir_investimentos(1000.0)

@@ -4,11 +4,91 @@ from agent import get_agent_app
 from langchain_core.messages import HumanMessage
 import uuid
 import os
+import json
+import plotly.graph_objects as go
 from openai import AsyncOpenAI
 
 openai_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 from tools.security import mask_cpf, verificar_output_guardrails
+
+
+def extrair_projecao_investimento(tool_message):
+    """Extrai a série mensal estruturada devolvida por uma tool de investimento."""
+    content = (
+        tool_message.get("content")
+        if isinstance(tool_message, dict)
+        else getattr(tool_message, "content", None)
+    )
+    if isinstance(content, dict):
+        payload = content
+    elif isinstance(content, list):
+        text_blocks = [
+            block.get("text", "")
+            for block in content
+            if isinstance(block, dict) and block.get("type") == "text"
+        ]
+        try:
+            payload = json.loads("".join(text_blocks))
+        except (json.JSONDecodeError, TypeError):
+            return None
+    elif isinstance(content, str):
+        try:
+            payload = json.loads(content)
+        except (json.JSONDecodeError, TypeError):
+            return None
+    else:
+        return None
+
+    projection = payload.get("projecao_mensal")
+    if not isinstance(projection, dict):
+        return None
+    if not projection.get("meses") or not projection.get("opcoes"):
+        return None
+    return projection
+
+
+def criar_grafico_investimentos(projection):
+    """Monta um gráfico interativo comparando todas as projeções retornadas."""
+    months = projection["meses"]
+    figure = go.Figure()
+
+    figure.add_trace(go.Scatter(
+        x=months,
+        y=projection.get("total_aportado", []),
+        mode="lines",
+        name="Total aportado",
+        line={"color": "#94a3b8", "width": 2, "dash": "dash"},
+        hovertemplate="Mês %{x}<br>Aportado: R$ %{y:,.2f}<extra></extra>",
+    ))
+
+    colors = ["#38bdf8", "#a78bfa", "#34d399", "#fbbf24", "#fb7185"]
+    for index, option in enumerate(projection["opcoes"]):
+        figure.add_trace(go.Scatter(
+            x=months,
+            y=option["valores"],
+            mode="lines+markers",
+            name=option["nome"],
+            line={"color": colors[index % len(colors)], "width": 3},
+            marker={"size": 5},
+            hovertemplate=f"{option['nome']}<br>Mês %{{x}}: R$ %{{y:,.2f}}<extra></extra>",
+        ))
+
+    figure.update_layout(
+        title={"text": "Evolução projetada dos investimentos", "x": 0.02},
+        xaxis_title="Mês",
+        yaxis_title="Saldo acumulado (R$)",
+        hovermode="x unified",
+        template="plotly_dark",
+        paper_bgcolor="#111827",
+        plot_bgcolor="#111827",
+        legend={"orientation": "h", "y": -0.24, "x": 0},
+        margin={"l": 55, "r": 25, "t": 60, "b": 90},
+        height=440,
+    )
+    figure.update_xaxes(dtick=1, gridcolor="rgba(148,163,184,0.12)")
+    figure.update_yaxes(gridcolor="rgba(148,163,184,0.12)", tickprefix="R$ ")
+    return figure
 
 # Esta função intercepta o cookie de login definido pelo nosso FastAPI
 @cl.header_auth_callback
@@ -116,6 +196,7 @@ async def on_message(message: cl.Message):
     
     # Processamento do LangGraph
     final_response = "Desculpe, erro ao pensar."
+    investment_projection = None
     
     # Controle da visibilidade do painel direito (Dashboard)
     from state import DASHBOARD_STATES
@@ -159,6 +240,10 @@ async def on_message(message: cl.Message):
                             # (Abertura do fluxo de caixa movida para o final para sincronizar com a IA)
                         except Exception as e:
                             print(f"[Erro State] {e}")
+
+                    projection = extrair_projecao_investimento(tool_msg)
+                    if projection:
+                        investment_projection = projection
                                 
     # 1.4 Output Guardrails
     final_response = verificar_output_guardrails(final_response)
@@ -179,6 +264,16 @@ async def on_message(message: cl.Message):
     
     # Prepara elementos visuais (grafico e tts)
     elements_to_show = []
+
+    if investment_projection:
+        investment_figure = criar_grafico_investimentos(investment_projection)
+        elements_to_show.append(
+            cl.Plotly(
+                name="Projeção dos investimentos",
+                figure=investment_figure,
+                display="inline",
+            )
+        )
     
     # Gera o Áudio da Resposta (TTS) APENAS se o usuário enviou áudio original
     if audio_text:

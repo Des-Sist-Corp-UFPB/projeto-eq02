@@ -39,7 +39,17 @@ def simular_investimento(valor_mensal: float, meses: int, taxa_anual_porcentagem
     return {
         "montante_final": round(montante, 2), 
         "total_investido": round(investido, 2),
-        "dica": "Explique de forma resumida o resultado da simulação para o usuário. Não há gráficos, use apenas texto."
+        "projecao_mensal": {
+            "meses": list(range(0, meses + 1)),
+            "total_aportado": [0.0] + hist_investido,
+            "opcoes": [
+                {
+                    "nome": f"Projeção a {taxa_anual_porcentagem:.2f}% a.a.",
+                    "valores": [0.0] + hist_montante,
+                }
+            ],
+        },
+        "dica": "Explique resumidamente o resultado. O aplicativo renderizará o gráfico com esta projeção."
     }
 
 @mcp.tool()
@@ -94,9 +104,7 @@ def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False,
             {"tipo": "Carteira de FIIs e Ações", "prazo": "Longo Prazo", "taxa_anual": 12.0, "rentabilidade_esperada": "Dividendos mensais + Valorização", "risco": "Médio/Alto"}
         ]
         
-    labels = []
-    valores = []
-    valor_investido_puro = valor_mensal * meses_simulacao
+    projecoes_mensais = []
     
     for op in opcoes:
         taxa_mensal = (op["taxa_anual"] / 100) / 12
@@ -104,8 +112,16 @@ def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False,
         for _ in range(meses_simulacao):
             montante = (montante + valor_mensal) * (1 + taxa_mensal)
         
-        labels.append(op["tipo"])
-        valores.append(round(montante, 2))
+        serie_mensal = [0.0]
+        montante_serie = 0.0
+        for _ in range(meses_simulacao):
+            montante_serie = (montante_serie + valor_mensal) * (1 + taxa_mensal)
+            serie_mensal.append(round(montante_serie, 2))
+
+        projecoes_mensais.append({
+            "nome": op["tipo"],
+            "valores": serie_mensal,
+        })
         op["simulacao_final_projetada"] = f"R$ {montante:.2f} (em {meses_simulacao} meses)"
         # Remove a taxa interna para não confundir o LLM
         del op["taxa_anual"]
@@ -113,7 +129,12 @@ def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False,
     return {
         "analise_estrategica": analise_estrategica,
         "opcoes_sugeridas": opcoes,
-        "dica": "ATENÇÃO: Foque apenas em explicar textualmente as opções de forma clara."
+        "projecao_mensal": {
+            "meses": list(range(0, meses_simulacao + 1)),
+            "total_aportado": [round(valor_mensal * mes, 2) for mes in range(0, meses_simulacao + 1)],
+            "opcoes": projecoes_mensais,
+        },
+        "dica": "Explique as opções de forma clara. O aplicativo renderizará o gráfico com as projeções retornadas."
     }
 
 @mcp.tool()
