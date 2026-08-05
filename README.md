@@ -33,13 +33,80 @@ O projeto foi refatorado para atender altos padrões de engenharia de software e
 8. **Bateria de Testes (Pytest):** O projeto conta com testes automatizados focados em API e Utils, utilizando injeção de dependência e `mocking` para garantir a qualidade sem poluir o banco real.
 
 ## Log de Auditoria
-- **O que é auditado:** Ações cruciais de segurança dos usuários, como Login e Registro de conta.
-- **Onde fica armazenado:** Na tabela `audit_logs` do banco de dados PostgreSQL. Os principais campos incluem a ação (`action`), o usuário (`user_cpf`) e detalhes extras (`details` em formato JSON).
-- **Como foi implementado:** Através de uma função utilitária dedicada (`log_action`) que executa a inserção diretamente no banco de dados e é chamada nos endpoints relevantes da API.
-- **Quais arquivos participam:** 
-  - `tools/audit.py` (função de registro `log_action`)
-  - `api_server.py` (chamadas de auditoria nas rotas de login/registro)
-  - `alembic/versions/006_audit_logs.py` (migration de criação da tabela)
+
+O sistema possui um módulo persistente de auditoria para registrar ações de
+segurança e alterações relevantes nos dados financeiros. O objetivo é permitir
+rastrear **quem realizou a ação, qual operação ocorreu, quando ocorreu e quais
+dados de contexto foram afetados**.
+
+### Eventos auditados
+
+| Evento (`action`) | Operação registrada | Informações salvas em `details` |
+|---|---|---|
+| `LOGIN_SUCCESS` | Login concluído | Identificação do usuário pelo CPF |
+| `LOGIN_FAILED` | Tentativa de login inválida | Motivo: usuário inexistente ou senha inválida |
+| `REGISTER` | Cadastro pela API | Nome e e-mail cadastrados |
+| `CLIENT_REGISTERED_VIA_MCP` | Cadastro realizado por ferramenta MCP | ID do cliente e e-mail |
+| `TRANSACTION_CREATED` | Criação de gasto ou conta a pagar | ID, valor, categoria, data, status, parcelas e recorrência |
+| `TRANSACTION_UPDATED` | Alteração ou pagamento de uma transação | ID, campos alterados, valor, categoria e status resultantes |
+| `TRANSACTION_DELETED` | Exclusão de transação | ID do registro excluído |
+| `GOAL_CREATED` | Criação de meta mensal | ID, categoria, limite e competência da meta |
+| `INCOME_UPDATED` | Alteração da renda mensal | Valor anterior e novo valor |
+| `MEMORY_CREATED` | Gravação de memória do assistente | ID da memória, sem copiar seu conteúdo privado para o log |
+
+As consultas de leitura não são gravadas, evitando ruído e crescimento
+desnecessário da tabela. Senhas, hashes, tokens e o texto das memórias **nunca
+são armazenados no log de auditoria**.
+
+### Armazenamento
+
+Os eventos ficam na tabela PostgreSQL `audit_logs`, criada pela migration
+`alembic/versions/006_audit_logs.py`:
+
+| Campo | Tipo | Finalidade |
+|---|---|---|
+| `id` | UUID | Identificador único do evento |
+| `action` | VARCHAR(100) | Nome padronizado da ação |
+| `user_cpf` | VARCHAR(11) | Usuário associado ao evento |
+| `details` | TEXT contendo JSON | Metadados específicos da operação |
+| `created_at` | TIMESTAMP WITH TIME ZONE | Data e hora UTC geradas pelo banco |
+
+### Implementação e fluxo
+
+O serviço central `tools/audit.py` expõe `log_action(action, user_cpf,
+details)`. Ele serializa os detalhes em JSON e executa um `INSERT` parametrizado
+por meio de `tools/db.py`. Cada ação de escrita chama esse serviço somente após
+a operação principal retornar sucesso:
+
+```text
+Usuário/API/Agente
+        ↓
+operação de negócio concluída
+        ↓
+log_action(ação, CPF, detalhes seguros)
+        ↓
+INSERT parametrizado em audit_logs
+```
+
+Arquivos participantes:
+
+- `tools/audit.py`: serviço central de auditoria e serialização segura do JSON.
+- `tools/db.py`: pool de conexões e execução parametrizada no PostgreSQL.
+- `api_server.py`: auditoria de login, falha de login e cadastro pela API.
+- `tools/transactions.py`: criação, edição e exclusão de transações.
+- `tools/goals.py`: criação de metas financeiras.
+- `tools/clients.py`: cadastro via MCP e alteração de renda.
+- `tools/memory.py`: registro da criação de memória sem expor seu conteúdo.
+- `alembic/versions/006_audit_logs.py`: criação e reversão da tabela.
+- `tests/test_audit.py`: testes automatizados do serviço de auditoria.
+
+Para verificar os eventos diretamente no ambiente local:
+
+```sql
+SELECT id, action, user_cpf, details, created_at
+FROM audit_logs
+ORDER BY created_at DESC;
+```
 
 ## Integração com Serviço Externo
 - **Qual é o serviço externo:** OpenAI.

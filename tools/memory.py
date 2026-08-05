@@ -2,6 +2,7 @@
 from fastmcp import FastMCP
 from tools.db import execute_query, execute_insert
 from tools.clients import _get_client_internal
+from tools.audit import log_action
 
 mcp = FastMCP("memory")
 
@@ -14,6 +15,11 @@ def add_user_memory(cpf: str, fact: str) -> dict:
     
     sql = "INSERT INTO user_memory (client_id, fact) VALUES (%s, %s) RETURNING *"
     res = execute_insert(sql, (client["id"], fact))
+    if res:
+        log_action("MEMORY_CREATED", cpf, {
+            "memory_id": res[0].get("id"),
+            "content_stored": True,
+        })
     return res[0] if res else {}
 
 @mcp.tool()

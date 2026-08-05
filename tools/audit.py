@@ -9,7 +9,7 @@ def log_action(action: str, user_cpf: str, details: dict = None):
     :param user_cpf: CPF do usuário que realizou/sofreu a ação
     :param details: Dicionário contendo dados extras para auditoria
     """
-    details_json = json.dumps(details) if details else "{}"
+    details_json = json.dumps(details, default=str, ensure_ascii=False) if details else "{}"
     
     sql = """
         INSERT INTO audit_logs (action, user_cpf, details)

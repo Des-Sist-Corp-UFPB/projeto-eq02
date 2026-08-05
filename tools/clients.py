@@ -2,6 +2,7 @@
 from fastmcp import FastMCP
 from typing import Optional
 from tools.db import execute_query, execute_insert
+from tools.audit import log_action
 
 mcp = FastMCP("clients")
 
@@ -21,6 +22,11 @@ def register_client(nome: str, cpf: str, email: str, renda_total: float) -> dict
     sql = """INSERT INTO clients (nome, cpf, email, renda_total) 
              VALUES (%s, %s, %s, %s) RETURNING *"""
     res = execute_insert(sql, (nome, cpf, email, renda_total))
+    if res:
+        log_action("CLIENT_REGISTERED_VIA_MCP", cpf, {
+            "client_id": res[0].get("id"),
+            "email": email,
+        })
     return res[0] if res else {}
 
 @mcp.tool()
@@ -30,5 +36,9 @@ def atualizar_renda(cpf: str, nova_renda: float) -> dict:
     if not client: return {"error": "Cliente não encontrado"}
     sql = "UPDATE clients SET renda_total = %s WHERE cpf = %s RETURNING *"
     res = execute_insert(sql, (nova_renda, cpf))
+    if res:
+        log_action("INCOME_UPDATED", cpf, {
+            "previous_income": client.get("renda_total"),
+            "new_income": nova_renda,
+        })
     return res[0] if res else {}
-

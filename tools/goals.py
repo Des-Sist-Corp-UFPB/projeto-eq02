@@ -2,6 +2,7 @@
 from fastmcp import FastMCP
 from tools.db import execute_query, execute_insert
 from tools.clients import _get_client_internal
+from tools.audit import log_action
 
 mcp = FastMCP("goals")
 
@@ -15,6 +16,13 @@ def set_goal(cpf: str, category: str, limit_amount: float, month_year: str) -> d
     sql = """INSERT INTO goals (client_id, category, limit_amount, month_year) 
              VALUES (%s, %s, %s, %s) RETURNING *"""
     res = execute_insert(sql, (client["id"], category, limit_amount, month_year))
+    if res:
+        log_action("GOAL_CREATED", cpf, {
+            "goal_id": res[0].get("id"),
+            "category": category,
+            "limit_amount": limit_amount,
+            "month_year": month_year,
+        })
     return res[0] if res else {}
 
 @mcp.tool()

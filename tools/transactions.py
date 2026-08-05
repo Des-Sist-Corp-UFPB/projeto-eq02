@@ -3,6 +3,7 @@ from fastmcp import FastMCP
 from tools.db import execute_query, execute_insert
 from tools.clients import _get_client_internal
 from tools.advisor import analisar_fluxo_caixa
+from tools.audit import log_action
 
 mcp = FastMCP("transactions")
 
@@ -80,7 +81,17 @@ def add_transaction(cpf: str, amount: float, category: str, description: str, da
     sql = """INSERT INTO transactions (client_id, amount, installments, category, description, transaction_date, status, is_recurring)
              VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING *"""
     res = execute_insert(sql, (client["id"], amount, installments, category, description, date, status, is_recurring))
-    
+
+    if res:
+        log_action("TRANSACTION_CREATED", cpf, {
+            "transaction_id": res[0].get("id"),
+            "amount": amount,
+            "category": category,
+            "status": status,
+            "transaction_date": date,
+            "installments": installments,
+            "is_recurring": is_recurring,
+        })
 
     return {
         "status": "success",
@@ -171,6 +182,13 @@ def update_transaction(transaction_id: str, amount: float = None, category: str 
         client_data = execute_query("SELECT cpf FROM clients WHERE id = %s", (res[0]["client_id"],), fetch_one=True)
         if client_data:
             cpf_cliente = client_data[0]["cpf"]
+            log_action("TRANSACTION_UPDATED", cpf_cliente, {
+                "transaction_id": transaction_id,
+                "changed_fields": [field.split(" = ")[0] for field in updates],
+                "amount": res[0].get("amount"),
+                "category": res[0].get("category"),
+                "status": res[0].get("status"),
+            })
             
     return {
         "status": "success",
@@ -193,6 +211,11 @@ def delete_transaction(transaction_id: str) -> dict:
 
     sql = "DELETE FROM transactions WHERE id = %s RETURNING id"
     res = execute_insert(sql, (transaction_id,))
+
+    if res and cpf_cliente:
+        log_action("TRANSACTION_DELETED", cpf_cliente, {
+            "transaction_id": transaction_id,
+        })
     
     return {
         "status": "success", 
