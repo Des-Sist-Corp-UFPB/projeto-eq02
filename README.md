@@ -109,12 +109,21 @@ ORDER BY created_at DESC;
 ```
 
 ## Integração com Serviço Externo
-- **Qual é o serviço externo:** OpenAI.
-- **Para que é usado:** Utilizado como o cérebro da inteligência artificial do assistente (modelo `gpt-4o-mini` via LangGraph), para transcrição de áudio via Whisper e geração de áudio (Text-to-Speech) de forma dinâmica para as respostas do assistente.
-- **Quais arquivos participam:**
-  - `chat_app.py` (gerenciamento das chamadas da API da OpenAI para TTS e Transcrição/Whisper)
-  - `agent.py` (configuração e uso do LLM no LangGraph)
-- **Como é configurado:** Através da variável de ambiente `OPENAI_API_KEY` injetada no container via arquivo `.env`.
+
+### OpenAI
+
+- **Para que é usado:** cérebro do assistente (`gpt-4o-mini` via LangGraph), transcrição de áudio com Whisper e geração de voz com Text-to-Speech.
+- **Arquivos participantes:** `agent.py` e `chat_app.py`.
+- **Configuração:** variável de ambiente `OPENAI_API_KEY`, injetada pelo arquivo `.env` sem expor a chave no repositório.
+
+### Umami Analytics
+
+- **Para que é usado:** coleta de visualizações e métricas de navegação da aplicação no painel central da disciplina.
+- **Servidor:** `https://umami.dsc.rodrigor.com`.
+- **Website ID da equipe:** `256f21b6-a00f-4b43-9bd0-457c56e9ec9e`.
+- **Implementação:** script oficial do Umami carregado com `defer` antes do fechamento de `</head>`.
+- **Páginas instrumentadas:** `static/acesso-v2.html`, `static/cadastro-v2.html`, `static/hibrido-v5.html` e `static/dashboard-only-v5.html`.
+- **Segurança:** as credenciais de acesso ao painel não são armazenadas no código; somente o identificador público do website é enviado pelo frontend.
 
 ## 🚀 Como Executar o Projeto Localmente
 
