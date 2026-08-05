@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 import logging
 import os
+from pathlib import Path
 from typing import Any
 
 from fastmcp import FastMCP
@@ -11,6 +12,13 @@ from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 mcp = FastMCP("investment_research")
+
+GUIDE_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "wiki"
+    / "04-regras-de-negocio"
+    / "guia-investimentos.md"
+)
 
 TRUSTED_DOMAINS = [
     "bcb.gov.br",
@@ -21,6 +29,14 @@ TRUSTED_DOMAINS = [
     "fgc.org.br",
     "anbima.com.br",
 ]
+
+
+def _load_investment_guide() -> str:
+    """Carrega a base local versionada usada para orientar a pesquisa."""
+    guide = GUIDE_PATH.read_text(encoding="utf-8").strip()
+    if not guide:
+        raise ValueError("O guia-base de investimentos esta vazio.")
+    return guide
 
 
 def _extract_sources(response: Any) -> list[dict[str, str]]:
@@ -61,7 +77,27 @@ def _research_investments(
 
     consulted_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     model = os.getenv("OPENAI_WEB_SEARCH_MODEL", "gpt-5.6")
+
+    try:
+        investment_guide = _load_investment_guide()
+    except (OSError, UnicodeError, ValueError) as exc:
+        logger.exception("Falha ao carregar o guia-base de investimentos")
+        return {
+            "status": "error",
+            "consulted_at": consulted_at,
+            "message": "A base local de investimentos nao esta disponivel.",
+            "error_type": type(exc).__name__,
+        }
+
     prompt = f"""
+Use o GUIA LOCAL abaixo como regra de interpretacao e seguranca. Complemente-o
+com dados atuais encontrados na web. Informacoes atuais da web prevalecem apenas
+para taxas, datas, limites e regras que possam ter mudado.
+
+<guia_local>
+{investment_guide}
+</guia_local>
+
 Pesquise alternativas de investimento disponiveis no Brasil para este cenario:
 - aporte inicial unico: R$ {valor:.2f};
 - prazo: {prazo_meses} meses;
@@ -107,6 +143,10 @@ Inclua citacoes junto das afirmacoes factuais.
         "status": "ok",
         "consulted_at": consulted_at,
         "model": model,
+        "knowledge_base": {
+            "document": "wiki/04-regras-de-negocio/guia-investimentos.md",
+            "loaded": True,
+        },
         "query": {
             "valor": round(valor, 2),
             "prazo_meses": prazo_meses,
@@ -135,4 +175,3 @@ def pesquisar_investimentos_atualizados(
     de taxas ou de produtos atuais. O valor representa um aporte inicial unico.
     """
     return _research_investments(valor, prazo_meses, objetivo, perfil_risco)
-
