@@ -137,8 +137,21 @@ A aplicação é **100% conteinerizada**, pronta para produção. O banco de dad
 Na raiz do projeto, crie o arquivo `.env`:
 ```env
 OPENAI_API_KEY=sua_chave_da_openai
+OPENAI_WEB_SEARCH_MODEL=gpt-5.6
 CHAINLIT_AUTH_SECRET=uma-chave-aleatoria-bem-segura
 ```
+
+`OPENAI_WEB_SEARCH_MODEL` é opcional e define o modelo usado apenas na pesquisa
+financeira atualizada. Quando não informada, a aplicação usa `gpt-5.6`.
+
+### Pesquisa atualizada de investimentos
+
+Perguntas sobre opções, taxas ou cenário atual acionam a ferramenta MCP
+`pesquisar_investimentos_atualizados`. Ela consulta a web no momento da pergunta,
+restringe a busca a fontes institucionais (Banco Central, Tesouro Direto, CVM,
+B3, FGC, ANBIMA e portais do Governo), registra a data da consulta e devolve as
+fontes utilizadas. Os resultados são educacionais e não representam promessa de
+rentabilidade ou recomendação individual.
 
 ### 3. Rodando com Docker
 Basta subir os containers. O banco de dados (PostgreSQL) será criado e o Alembic cuidará de construir todas as tabelas automaticamente.

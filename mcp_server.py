@@ -9,6 +9,7 @@ from tools.memory import mcp as memory_mcp
 from tools.advisor import mcp as advisor_mcp
 from tools.agent_behavior import mcp as behavior_mcp
 from tools.security import mcp as security_mcp
+from tools.investment_research import mcp as investment_research_mcp
 
 load_dotenv()
 
@@ -31,6 +32,7 @@ mcp.mount(memory_mcp, namespace="memory")
 mcp.mount(advisor_mcp, namespace="advisor")
 mcp.mount(behavior_mcp, namespace="behavior")
 mcp.mount(security_mcp, namespace="security")
+mcp.mount(investment_research_mcp, namespace="investment_research")
 
 @mcp.tool()
 def help() -> str:
