@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from tools.investment_research import (
+    MAX_RESEARCH_SOURCES,
     TRUSTED_DOMAINS,
     _extract_sources,
     _load_investment_guide,
@@ -30,6 +31,28 @@ def test_extract_sources_remove_duplicatas():
         "title": "Banco Central",
         "url": "https://www.bcb.gov.br/teste",
     }]
+
+
+def test_extract_sources_limits_and_prioritizes_citations():
+    payload = {
+        "search_sources": [
+            {"title": "Fonte de busca", "url": "https://bcb.gov.br/busca"}
+        ],
+        "annotations": [
+            {
+                "type": "url_citation",
+                "title": f"Fonte {index}",
+                "url": f"https://bcb.gov.br/fonte-{index}",
+            }
+            for index in range(MAX_RESEARCH_SOURCES + 5)
+        ],
+    }
+
+    sources = _extract_sources(payload)
+
+    assert len(sources) == MAX_RESEARCH_SOURCES
+    assert sources[0]["url"] == "https://bcb.gov.br/fonte-0"
+    assert all(source["url"] != "https://bcb.gov.br/busca" for source in sources)
 
 
 def test_load_investment_guide():

@@ -12,6 +12,7 @@ from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 mcp = FastMCP("investment_research")
+MAX_RESEARCH_SOURCES = 10
 
 GUIDE_PATH = (
     Path(__file__).resolve().parents[1]
@@ -40,27 +41,37 @@ def _load_investment_guide() -> str:
 
 
 def _extract_sources(response: Any) -> list[dict[str, str]]:
-    """Extrai e remove duplicatas das URLs retornadas pela busca web."""
+    """Prioriza fontes citadas, remove duplicatas e limita a resposta."""
     payload = response.model_dump() if hasattr(response, "model_dump") else response
     sources: list[dict[str, str]] = []
     seen: set[str] = set()
 
-    def visit(value: Any) -> None:
+    def visit(value: Any, citations_only: bool) -> None:
+        if len(sources) >= MAX_RESEARCH_SOURCES:
+            return
         if isinstance(value, dict):
             url = value.get("url")
-            if isinstance(url, str) and url.startswith(("https://", "http://")) and url not in seen:
+            is_citation = value.get("type") == "url_citation"
+            if (
+                isinstance(url, str)
+                and url.startswith(("https://", "http://"))
+                and url not in seen
+                and (is_citation or not citations_only)
+            ):
                 seen.add(url)
                 sources.append({
                     "title": str(value.get("title") or value.get("name") or url),
                     "url": url,
                 })
             for nested in value.values():
-                visit(nested)
+                visit(nested, citations_only)
         elif isinstance(value, (list, tuple)):
             for nested in value:
-                visit(nested)
+                visit(nested, citations_only)
 
-    visit(payload)
+    visit(payload, citations_only=True)
+    if not sources:
+        visit(payload, citations_only=False)
     return sources
 
 
@@ -104,11 +115,12 @@ Pesquise alternativas de investimento disponiveis no Brasil para este cenario:
 - objetivo declarado: {objetivo.strip() or 'nao informado'};
 - perfil de risco declarado: {perfil_risco.strip() or 'nao informado'}.
 
-Use somente as fontes institucionais permitidas. Compare alternativas adequadas
+Use no máximo {MAX_RESEARCH_SOURCES} fontes institucionais permitidas, escolhendo
+somente as mais diretamente relevantes para a comparação. Compare alternativas adequadas
 ao prazo usando dados atuais encontrados, como taxa de referencia, liquidez,
 tributacao, garantia, riscos e data-base. Nao invente uma rentabilidade nem trate
 retorno passado como promessa. Nao escolha um produto como "o melhor": apresente
-de 2 a 5 alternativas comparaveis e explique as condicoes em que cada uma faz
+exatamente 5 alternativas reais e comparaveis e explique as condicoes em que cada uma faz
 sentido. Quando uma taxa exata nao estiver disponivel, diga isso claramente.
 
 Responda em portugues do Brasil, de forma concisa, com estas secoes:

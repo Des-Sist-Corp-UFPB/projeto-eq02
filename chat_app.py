@@ -5,6 +5,7 @@ from langchain_core.messages import HumanMessage
 import uuid
 import os
 import json
+import re
 import plotly.graph_objects as go
 from openai import AsyncOpenAI
 
@@ -75,6 +76,20 @@ def combinar_projecoes_investimento(current, new):
             current["opcoes"].append(option)
             existing_names.add(option["nome"])
     return current
+
+
+def remover_detalhamento_mensal(response: str) -> str:
+    """Remove do texto os pontos mensais que já são exibidos no gráfico."""
+    cleaned_lines = []
+    monthly_value = re.compile(r"^\s*(?:[-*]\s*)?(?:\*\*)?m[eê]s\s+\d+\s*:", re.IGNORECASE)
+    monthly_heading = re.compile(r"^\s*(?:\*\*)?proje[cç][aã]o\s+mensal\s*:", re.IGNORECASE)
+
+    for line in response.splitlines():
+        if monthly_value.match(line) or monthly_heading.match(line):
+            continue
+        cleaned_lines.append(line)
+
+    return "\n".join(cleaned_lines).strip()
 
 
 def criar_grafico_investimentos(projection):
@@ -217,7 +232,7 @@ async def on_message(message: cl.Message):
     # Forçar pesquisa atualizada antes de qualquer recomendação de investimento.
     msg_lower_check = final_content.lower()
     if "invest" in msg_lower_check or "simula" in msg_lower_check or "suger" in msg_lower_check or "opções" in msg_lower_check:
-        final_content += "\n\n[SISTEMA]: OBRIGATÓRIO: Para opções, comparações ou recomendações de investimento, invoque PRIMEIRO `pesquisar_investimentos_atualizados`. É proibido responder com opções ou taxas de memória. Depois da pesquisa, invoque `simular_investimento` uma vez para CADA alternativa que possua taxa anual efetiva confirmada, usando exatamente o mesmo aporte e prazo. Não use taxa zero quando um dado estiver ausente e não invente taxa para gerar gráfico. Na resposta final, resuma valor inicial, montante final, rendimento, riscos e hipóteses; não liste cada mês, pois o gráfico já mostra a evolução. Se a pesquisa falhar, informe a indisponibilidade e NÃO substitua por sugestões estáticas. Nunca gere gráfico em Markdown; o aplicativo renderiza as séries das tools."
+        final_content += "\n\n[SISTEMA]: OBRIGATÓRIO: Para opções, comparações ou recomendações de investimento, invoque PRIMEIRO `pesquisar_investimentos_atualizados` e apresente as 5 alternativas devolvidas. É proibido responder com opções ou taxas de memória. Depois da pesquisa, invoque `simular_investimento` uma vez para CADA alternativa que possua taxa anual efetiva confirmada, usando exatamente o mesmo aporte e prazo. Não use taxa zero quando um dado estiver ausente e não invente taxa para gerar gráfico. Na resposta final, resuma valor inicial, montante final, rendimento, riscos e hipóteses; não liste cada mês, pois o gráfico já mostra a evolução. Se a pesquisa falhar, informe a indisponibilidade e NÃO substitua por sugestões estáticas. Nunca gere gráfico em Markdown; o aplicativo renderiza as séries das tools."
             
     # Prepara a mensagem visual do Chainlit
     msg = cl.Message(content="")
@@ -288,20 +303,13 @@ async def on_message(message: cl.Message):
                                 
     # 1.4 Output Guardrails
     final_response = verificar_output_guardrails(final_response)
+    if is_investment_request:
+        final_response = remover_detalhamento_mensal(final_response)
 
     # Data e fontes são anexadas pela aplicação para não depender da formatação do LLM.
     if investment_research and investment_research.get("status") == "ok":
         consulted_at = investment_research.get("consulted_at", "não informada")
-        source_lines = []
-        for source in investment_research.get("sources", []):
-            url = source.get("url", "")
-            title = source.get("title") or url
-            if url and url not in final_response:
-                source_lines.append(f"- [{title}]({url})")
-
         appendix = f"\n\n**Consulta atualizada:** {consulted_at}"
-        if source_lines:
-            appendix += "\n\n**Fontes consultadas:**\n" + "\n".join(source_lines)
         final_response += appendix
 
     # ================= SINCRONIZAÇÃO DE UI =================
@@ -330,6 +338,17 @@ async def on_message(message: cl.Message):
                 size="large",
             )
         )
+
+    if investment_research and investment_research.get("status") == "ok":
+        sources = investment_research.get("sources", [])[:10]
+        if sources:
+            elements_to_show.append(
+                cl.CustomElement(
+                    name="SourcesPopover",
+                    props={"sources": sources},
+                    display="inline",
+                )
+            )
     
     # Gera o Áudio da Resposta (TTS) APENAS se o usuário enviou áudio original
     if audio_text:
