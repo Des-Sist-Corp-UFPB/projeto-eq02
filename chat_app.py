@@ -13,8 +13,8 @@ openai_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 from tools.security import mask_cpf, verificar_output_guardrails
 
 
-def extrair_projecao_investimento(tool_message):
-    """Extrai a série mensal estruturada devolvida por uma tool de investimento."""
+def extrair_payload_tool(tool_message):
+    """Converte o conteúdo de uma mensagem de tool em dicionário."""
     content = (
         tool_message.get("content")
         if isinstance(tool_message, dict)
@@ -38,6 +38,15 @@ def extrair_projecao_investimento(tool_message):
         except (json.JSONDecodeError, TypeError):
             return None
     else:
+        return None
+
+    return payload if isinstance(payload, dict) else None
+
+
+def extrair_projecao_investimento(tool_message):
+    """Extrai a série mensal estruturada devolvida por uma tool de investimento."""
+    payload = extrair_payload_tool(tool_message)
+    if not payload:
         return None
 
     projection = payload.get("projecao_mensal")
@@ -208,7 +217,7 @@ async def on_message(message: cl.Message):
     # Forçar pesquisa atualizada antes de qualquer recomendação de investimento.
     msg_lower_check = final_content.lower()
     if "invest" in msg_lower_check or "simula" in msg_lower_check or "suger" in msg_lower_check or "opções" in msg_lower_check:
-        final_content += "\n\n[SISTEMA]: OBRIGATÓRIO: Para opções, comparações ou recomendações de investimento, invoque PRIMEIRO `pesquisar_investimentos_atualizados`. É proibido responder com opções ou taxas de memória. Depois da pesquisa, invoque `simular_investimento` uma vez para CADA alternativa que possua taxa anual confirmada, usando exatamente o mesmo aporte e prazo. Não invente taxa para gerar gráfico. Na resposta final, informe data da consulta, fontes, riscos e hipóteses. Se a pesquisa falhar, informe a indisponibilidade e NÃO substitua por sugestões estáticas. Nunca gere gráfico em Markdown; o aplicativo renderiza as séries das tools."
+        final_content += "\n\n[SISTEMA]: OBRIGATÓRIO: Para opções, comparações ou recomendações de investimento, invoque PRIMEIRO `pesquisar_investimentos_atualizados`. É proibido responder com opções ou taxas de memória. Depois da pesquisa, invoque `simular_investimento` uma vez para CADA alternativa que possua taxa anual efetiva confirmada, usando exatamente o mesmo aporte e prazo. Não use taxa zero quando um dado estiver ausente e não invente taxa para gerar gráfico. Na resposta final, resuma valor inicial, montante final, rendimento, riscos e hipóteses; não liste cada mês, pois o gráfico já mostra a evolução. Se a pesquisa falhar, informe a indisponibilidade e NÃO substitua por sugestões estáticas. Nunca gere gráfico em Markdown; o aplicativo renderiza as séries das tools."
             
     # Prepara a mensagem visual do Chainlit
     msg = cl.Message(content="")
@@ -217,6 +226,7 @@ async def on_message(message: cl.Message):
     # Processamento do LangGraph
     final_response = "Desculpe, erro ao pensar."
     investment_projection = None
+    investment_research = None
     
     # Controle da visibilidade do painel direito (Dashboard)
     from state import DASHBOARD_STATES
@@ -230,46 +240,69 @@ async def on_message(message: cl.Message):
         
     agent_app = await get_agent_app()
     
-    # Executamos o stream e capturamos a ultima mensagem gerada pelo agente
-    async for event in agent_app.astream({"messages": [HumanMessage(content=final_content)], "cpf_ativo": cpf}, config, stream_mode="updates"):
-        for node, update in event.items():
-            if node == "chatbot":
-                chatbot_msg = update["messages"][-1]
-                if hasattr(chatbot_msg, "content") and chatbot_msg.content:
-                    final_response = chatbot_msg.content
-                    
-                # Intercepta se o LLM chamou ferramentas
-                if hasattr(chatbot_msg, "tool_calls") and chatbot_msg.tool_calls:
-                    pass # Deixamos a interceptação real para o nó 'tools' onde o retorno chega
-                        
-            if node == "tools":
-                tool_names = []
-                for m in update.get("messages", []):
-                    tool_names.append(getattr(m, "name", m.get("name", "")) if isinstance(m, dict) else getattr(m, "name", ""))
-                    
-                for tool_msg in update.get("messages", []):
-                    name = getattr(tool_msg, "name", tool_msg.get("name", "")) if isinstance(tool_msg, dict) else getattr(tool_msg, "name", "")
-                    
-                    if name:
-                        try:
-                            from state import DASHBOARD_STATES
-                            if "simular" in name.lower() or "sugerir" in name.lower():
-                                DASHBOARD_STATES[cpf] = False
-                            elif "transa" in name.lower() or "fluxo" in name.lower() or "goal" in name.lower() or "client" in name.lower():
-                                DASHBOARD_STATES[cpf] = True
-                            # (Abertura do fluxo de caixa movida para o final para sincronizar com a IA)
-                        except Exception as e:
-                            print(f"[Erro State] {e}")
+    async def processar_agente():
+        nonlocal final_response, investment_projection, investment_research
 
-                    projection = extrair_projecao_investimento(tool_msg)
-                    if projection:
-                        investment_projection = combinar_projecoes_investimento(
-                            investment_projection,
-                            projection,
-                        )
+        async for event in agent_app.astream({"messages": [HumanMessage(content=final_content)], "cpf_ativo": cpf}, config, stream_mode="updates"):
+            for node, update in event.items():
+                if node == "chatbot":
+                    chatbot_msg = update["messages"][-1]
+                    if hasattr(chatbot_msg, "content") and chatbot_msg.content:
+                        final_response = chatbot_msg.content
+
+                if node == "tools":
+                    for tool_msg in update.get("messages", []):
+                        name = getattr(tool_msg, "name", tool_msg.get("name", "")) if isinstance(tool_msg, dict) else getattr(tool_msg, "name", "")
+
+                        if name:
+                            try:
+                                from state import DASHBOARD_STATES
+                                if "simular" in name.lower() or "sugerir" in name.lower():
+                                    DASHBOARD_STATES[cpf] = False
+                                elif "transa" in name.lower() or "fluxo" in name.lower() or "goal" in name.lower() or "client" in name.lower():
+                                    DASHBOARD_STATES[cpf] = True
+                            except Exception as e:
+                                print(f"[Erro State] {e}")
+
+                        payload = extrair_payload_tool(tool_msg)
+                        if name and "pesquisar_investimentos" in name.lower() and payload:
+                            investment_research = payload
+
+                        projection = extrair_projecao_investimento(tool_msg)
+                        if projection:
+                            investment_projection = combinar_projecoes_investimento(
+                                investment_projection,
+                                projection,
+                            )
+
+    is_investment_request = any(
+        term in msg_lower for term in ("invest", "simula", "suger", "opções")
+    )
+    if is_investment_request:
+        async with cl.Step(name="Recolhendo informações atualizadas", type="tool") as research_step:
+            research_step.output = "Consultando o guia financeiro e fontes institucionais..."
+            await processar_agente()
+            research_step.output = "Informações reunidas e projeções calculadas."
+    else:
+        await processar_agente()
                                 
     # 1.4 Output Guardrails
     final_response = verificar_output_guardrails(final_response)
+
+    # Data e fontes são anexadas pela aplicação para não depender da formatação do LLM.
+    if investment_research and investment_research.get("status") == "ok":
+        consulted_at = investment_research.get("consulted_at", "não informada")
+        source_lines = []
+        for source in investment_research.get("sources", []):
+            url = source.get("url", "")
+            title = source.get("title") or url
+            if url and url not in final_response:
+                source_lines.append(f"- [{title}]({url})")
+
+        appendix = f"\n\n**Consulta atualizada:** {consulted_at}"
+        if source_lines:
+            appendix += "\n\n**Fontes consultadas:**\n" + "\n".join(source_lines)
+        final_response += appendix
 
     # ================= SINCRONIZAÇÃO DE UI =================
     # Só abre o dashboard DEPOIS que o LLM terminar de pensar e devolver a resposta final.

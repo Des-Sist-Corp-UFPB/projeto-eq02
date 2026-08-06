@@ -22,8 +22,8 @@ FUTURO = {"Investimento", "Reserva", "Poupança", "Aposentadoria"}
 
 @mcp.tool()
 def simular_investimento(valor_inicial: float, meses: int, taxa_anual_porcentagem: float = 10.0, nome_opcao: str = "") -> dict:
-    """Projeta um aporte inicial único. Ao comparar opções, informe nome_opcao para identificar a linha do gráfico."""
-    taxa_mensal = (taxa_anual_porcentagem / 100) / 12
+    """Projeta um aporte único a partir de uma taxa anual efetiva confirmada."""
+    taxa_mensal = (1 + taxa_anual_porcentagem / 100) ** (1 / 12) - 1
     hist_montante = [
         round(valor_inicial * ((1 + taxa_mensal) ** mes), 2)
         for mes in range(0, meses + 1)
@@ -81,7 +81,7 @@ def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False,
     projecoes_mensais = []
     
     for op in opcoes:
-        taxa_mensal = (op["taxa_anual"] / 100) / 12
+        taxa_mensal = (1 + op["taxa_anual"] / 100) ** (1 / 12) - 1
         serie_mensal = [
             round(aporte_inicial * ((1 + taxa_mensal) ** mes), 2)
             for mes in range(0, meses_simulacao + 1)

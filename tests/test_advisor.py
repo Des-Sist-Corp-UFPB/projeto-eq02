@@ -14,6 +14,12 @@ def test_simular_investimento():
     assert len(res["projecao_mensal"]["opcoes"][0]["valores"]) == 13
     assert res["projecao_mensal"]["opcoes"][0]["nome"] == "Teste 10%"
 
+
+def test_simular_investimento_usa_taxa_anual_efetiva():
+    res = simular_investimento(100.0, 12, 10.0, nome_opcao="Taxa efetiva")
+    assert res["montante_final"] == 110.0
+    assert res["rendimento_total"] == 10.0
+
 def test_sugerir_investimentos_zero():
     res = sugerir_investimentos(0.0)
     assert "não é suficiente" in res["recomendacao"]
