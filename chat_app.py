@@ -205,10 +205,10 @@ async def on_message(message: cl.Message):
         else:
             final_content = audio_text
             
-    # Forçar a invocação da tool de investimentos para evitar respostas de memória
+    # Forçar pesquisa atualizada antes de qualquer recomendação de investimento.
     msg_lower_check = final_content.lower()
     if "invest" in msg_lower_check or "simula" in msg_lower_check or "suger" in msg_lower_check or "opções" in msg_lower_check:
-        final_content += "\n\n[SISTEMA]: OBRIGATÓRIO: Você DEVE invocar a ferramenta 'sugerir_investimentos' ou 'simular_investimento' agora mesmo. É ESTRITAMENTE PROIBIDO responder de memória. Após receber os dados da tool, gere a sua resposta de texto para o usuário. ATENÇÃO: NUNCA tente gerar gráficos em Markdown, desenhar imagens ou tabelas complexas. Foque APENAS no texto descritivo e direto das opções."
+        final_content += "\n\n[SISTEMA]: OBRIGATÓRIO: Para opções, comparações ou recomendações de investimento, invoque PRIMEIRO `pesquisar_investimentos_atualizados`. É proibido responder com opções ou taxas de memória. Depois da pesquisa, invoque `simular_investimento` uma vez para CADA alternativa que possua taxa anual confirmada, usando exatamente o mesmo aporte e prazo. Não invente taxa para gerar gráfico. Na resposta final, informe data da consulta, fontes, riscos e hipóteses. Se a pesquisa falhar, informe a indisponibilidade e NÃO substitua por sugestões estáticas. Nunca gere gráfico em Markdown; o aplicativo renderiza as séries das tools."
             
     # Prepara a mensagem visual do Chainlit
     msg = cl.Message(content="")

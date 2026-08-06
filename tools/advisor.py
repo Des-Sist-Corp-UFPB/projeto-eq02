@@ -47,10 +47,10 @@ def simular_investimento(valor_inicial: float, meses: int, taxa_anual_porcentage
         "dica": "Explique resumidamente o resultado. O aplicativo renderizará o gráfico com esta projeção."
     }
 
-@mcp.tool()
 def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False, cpf: str = "", meses_simulacao: int = 12) -> dict:
     """
-    Retorna opções e projeta exatamente o valor recebido como aporte inicial único.
+    Função legada mantida apenas para compatibilidade de testes internos.
+    Não é publicada no MCP porque suas opções e taxas são estáticas.
     O parâmetro valor nunca é reduzido, fracionado ou adaptado pela renda.
     `aplicar_regra_inteligente` é mantido apenas por compatibilidade e não altera o aporte.
     """
