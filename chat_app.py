@@ -92,6 +92,14 @@ def remover_detalhamento_mensal(response: str) -> str:
     return "\n".join(cleaned_lines).strip()
 
 
+def resumir_legenda(text: str, max_chars: int = 38) -> str:
+    """Encurta nomes longos sem alterar o texto completo exibido no hover."""
+    normalized = " ".join(str(text).split())
+    if len(normalized) <= max_chars:
+        return normalized
+    return normalized[: max_chars - 3].rstrip() + "..."
+
+
 def criar_grafico_investimentos(projection):
     """Monta um gráfico interativo comparando todas as projeções retornadas."""
     months = projection["meses"]
@@ -108,14 +116,15 @@ def criar_grafico_investimentos(projection):
 
     colors = ["#38bdf8", "#a78bfa", "#34d399", "#fbbf24", "#fb7185"]
     for index, option in enumerate(projection["opcoes"]):
+        full_name = option["nome"]
         figure.add_trace(go.Scatter(
             x=months,
             y=option["valores"],
             mode="lines+markers",
-            name=option["nome"],
+            name=resumir_legenda(full_name),
             line={"color": colors[index % len(colors)], "width": 3},
             marker={"size": 5},
-            hovertemplate=f"{option['nome']}<br>Mês %{{x}}: R$ %{{y:,.2f}}<extra></extra>",
+            hovertemplate=f"{full_name}<br>Mês %{{x}}: R$ %{{y:,.2f}}<extra></extra>",
         ))
 
     figure.update_layout(
@@ -126,9 +135,18 @@ def criar_grafico_investimentos(projection):
         template="plotly_dark",
         paper_bgcolor="#111827",
         plot_bgcolor="#111827",
-        legend={"orientation": "h", "y": -0.24, "x": 0},
-        margin={"l": 55, "r": 25, "t": 60, "b": 90},
-        height=560,
+        legend={
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": -0.12,
+            "yanchor": "top",
+            "entrywidth": 0.48,
+            "entrywidthmode": "fraction",
+            "font": {"size": 12},
+        },
+        margin={"l": 55, "r": 25, "t": 60, "b": 135},
+        height=540,
     )
     figure.update_xaxes(dtick=1, gridcolor="rgba(148,163,184,0.12)")
     figure.update_yaxes(gridcolor="rgba(148,163,184,0.12)", tickprefix="R$ ")
