@@ -22,6 +22,7 @@ def obter_roteiro_atendimento(cpf: str) -> str:
         D. Sempre que exibir a análise do fluxo de caixa e houver um 'saldo livre projetado' positivo, informe o saldo e pergunte se o usuário deseja pesquisar opções atuais de investimento. Não apresente produtos ou taxas estáticas sem realizar `pesquisar_investimentos_atualizados`.
         E. INTERFACE E MEMÓRIA: É ESTRITAMENTE PROIBIDO responder com valores financeiros "de memória" (baseado em mensagens anteriores do chat) ou tentar deduzir resultados matemáticos. A interface do sistema (Dashboard) DEPENDE que você invoque as ferramentas (tools) para que a tela do usuário seja atualizada. Se você não invocar a ferramenta e responder de cabeça, a tela do usuário vai quebrar e não vai desenhar os gráficos, além de ser uma péssima prática! SEMPRE INVOQUE AS TOOLS!
         F. EXCLUSÃO DE CONTAS: Se o usuário pedir para apagar/excluir um gasto, seja proativo: primeiro busque o gasto (usando query_transactions), mostre para o usuário de forma clara o que você encontrou (descrição, valor e data) e apenas pergunte de forma simples: "É essa conta mesmo que você quer excluir?". Após o sim, chame a ferramenta `delete_transaction`.
+        G. MEMÓRIA DE INVESTIMENTOS: Se o usuário disser apenas que vai fazer um investimento, pergunte qual será. Depois que ele informar o nome/tipo, use `save_investment_choice`. Para responder qual investimento ele informou anteriormente, use `get_investment_history`.
         """
         
     if renda == 0.0:

@@ -247,9 +247,33 @@ async def on_message(message: cl.Message):
         else:
             final_content = audio_text
             
-    # Forçar pesquisa atualizada antes de qualquer recomendação de investimento.
+    # Separa pesquisa de mercado de registro/consulta da memória de investimentos.
     msg_lower_check = final_content.lower()
-    if "invest" in msg_lower_check or "simula" in msg_lower_check or "suger" in msg_lower_check or "opções" in msg_lower_check:
+    is_investment_request = any(
+        term in msg_lower_check for term in ("invest", "simula", "suger", "opções")
+    )
+    is_investment_memory_intent = any(
+        phrase in msg_lower_check
+        for phrase in (
+            "vou fazer um investimento",
+            "vou investir em",
+            "escolhi o investimento",
+            "investimento que fiz",
+            "qual foi o investimento",
+            "qual investimento eu fiz",
+            "investimento que escolhi",
+            "realizei um investimento",
+        )
+    )
+    has_research_intent = any(
+        term in msg_lower_check
+        for term in ("opções", "opcoes", "simula", "suger", "recomenda", "pesquis", "rentabilidade", "rendimento", "taxa")
+    )
+    should_research_investments = is_investment_request and (
+        has_research_intent or not is_investment_memory_intent
+    )
+
+    if should_research_investments:
         final_content += "\n\n[SISTEMA]: OBRIGATÓRIO: Para opções, comparações ou recomendações de investimento, invoque PRIMEIRO `pesquisar_investimentos_atualizados` e apresente as 5 alternativas devolvidas. É proibido responder com opções ou taxas de memória. Depois da pesquisa, invoque `simular_investimento` uma vez para CADA alternativa que possua taxa anual efetiva confirmada, usando exatamente o mesmo aporte e prazo. Não use taxa zero quando um dado estiver ausente e não invente taxa para gerar gráfico. Na resposta final, resuma valor inicial, montante final, rendimento, riscos e hipóteses; não liste cada mês, pois o gráfico já mostra a evolução. Se a pesquisa falhar, informe a indisponibilidade e NÃO substitua por sugestões estáticas. Nunca gere gráfico em Markdown; o aplicativo renderiza as séries das tools."
             
     # Prepara a mensagem visual do Chainlit
@@ -308,10 +332,7 @@ async def on_message(message: cl.Message):
                                 projection,
                             )
 
-    is_investment_request = any(
-        term in msg_lower for term in ("invest", "simula", "suger", "opções")
-    )
-    if is_investment_request:
+    if should_research_investments:
         async with cl.Step(name="Recolhendo informações atualizadas", type="tool") as research_step:
             research_step.output = "Consultando o guia financeiro e fontes institucionais..."
             await processar_agente()
