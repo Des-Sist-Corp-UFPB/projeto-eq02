@@ -73,3 +73,5 @@ def test_analisar_fluxo_caixa_encontrado(mock_query, mock_client):
     assert res["renda_mensal"] == 5000.0
     assert res["total_gasto_mes_atual"] == 100.0
     assert res["total_contas_pendentes"] == 50.0
+    assert res["total_renda_comprometida"] == 150.0
+    assert res["burn_rate_porcentagem"] == 3.0

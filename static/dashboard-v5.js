@@ -11,7 +11,7 @@ dashboardRoot.innerHTML = `
       <article class="kpi-card"><span class="kpi-label">Renda total</span><strong class="kpi-value" id="renda-val">R$ 0,00</strong><span class="kpi-caption">Base mensal cadastrada</span></article>
       <article class="kpi-card"><span class="kpi-label">Gastos realizados</span><strong class="kpi-value" id="gasto-val">R$ 0,00</strong><span class="kpi-caption">Despesas pagas no período</span></article>
       <article class="kpi-card balance"><span class="kpi-label">Saldo projetado</span><strong class="kpi-value" id="saldo-val">R$ 0,00</strong><span class="kpi-caption">Após gastos e pendências</span></article>
-      <article class="kpi-card burn"><span class="kpi-label">Renda comprometida</span><strong class="kpi-value" id="burn-val">0%</strong><span class="kpi-caption">Burn rate do mês atual</span></article>
+      <article class="kpi-card burn"><span class="kpi-label">Renda comprometida</span><strong class="kpi-value" id="burn-val">0%</strong><span class="kpi-caption">Gastos realizados e pendências</span></article>
     </section>
     <section class="dashboard-grid">
       <article class="dash-card">

@@ -152,13 +152,15 @@ def analisar_fluxo_caixa(cpf: str) -> dict:
                     total_gasto += valor_parcela
                     gastos_por_categoria[t["category"]] = gastos_por_categoria.get(t["category"], 0.0) + valor_parcela
                 
-    burn_rate = (total_gasto / renda * 100) if renda > 0 else 0.0
+    total_comprometido = total_gasto + total_pendente
+    burn_rate = (total_comprometido / renda * 100) if renda > 0 else 0.0
             
     return {
         "mes_analisado": hoje.strftime("%Y-%m"),
         "renda_mensal": renda,
         "total_gasto_mes_atual": round(total_gasto, 2),
         "total_contas_pendentes": round(total_pendente, 2),
+        "total_renda_comprometida": round(total_comprometido, 2),
         "saldo_livre_projetado": round(renda - total_gasto - total_pendente, 2),
         "burn_rate_porcentagem": round(burn_rate, 2),
         "gastos_por_categoria": {k: round(v, 2) for k, v in gastos_por_categoria.items()},
