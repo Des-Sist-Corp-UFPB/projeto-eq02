@@ -1,0 +1,5 @@
+[run]
+omit =
+    chat_app.py
+    mcp_server.py
+    agent.py

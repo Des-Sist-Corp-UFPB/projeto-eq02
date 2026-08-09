@@ -1,0 +1,172 @@
+# pyrefly: ignore [missing-import]
+from fastmcp import FastMCP
+from typing import Optional, Dict
+from datetime import datetime, timedelta
+import time
+import logging
+from opentelemetry import trace
+from tools.clients import _get_client_internal
+from tools.db import execute_query
+
+tracer = trace.get_tracer("advisor")
+logger = logging.getLogger(__name__)
+
+mcp = FastMCP("advisor")
+
+NECESSIDADES = {
+    "Moradia", "Alimentação", "Saúde", "Transporte", "Educação",
+    "Comunicação", "Tecnologia", "Manutenção", "Seguros", "Impostos",
+    "Dívidas", "Cuidados Pessoais", "Dependentes",
+}
+FUTURO = {"Investimento", "Reserva", "Poupança", "Aposentadoria"}
+
+@mcp.tool()
+def simular_investimento(valor_inicial: float, meses: int, taxa_anual_porcentagem: float = 10.0, nome_opcao: str = "") -> dict:
+    """Projeta um aporte único a partir de uma taxa anual efetiva confirmada."""
+    taxa_mensal = (1 + taxa_anual_porcentagem / 100) ** (1 / 12) - 1
+    hist_montante = [
+        round(valor_inicial * ((1 + taxa_mensal) ** mes), 2)
+        for mes in range(0, meses + 1)
+    ]
+    montante = hist_montante[-1]
+        
+    return {
+        "montante_final": round(montante, 2), 
+        "total_investido": round(valor_inicial, 2),
+        "rendimento_total": round(montante - valor_inicial, 2),
+        "projecao_mensal": {
+            "meses": list(range(0, meses + 1)),
+            "total_aportado": [round(valor_inicial, 2)] * (meses + 1),
+            "opcoes": [
+                {
+                    "nome": nome_opcao.strip() or f"Projeção a {taxa_anual_porcentagem:.2f}% a.a.",
+                    "valores": hist_montante,
+                }
+            ],
+        },
+        "dica": "Explique resumidamente o resultado. O aplicativo renderizará o gráfico com esta projeção."
+    }
+
+def sugerir_investimentos(valor: float, aplicar_regra_inteligente: bool = False, cpf: str = "", meses_simulacao: int = 12) -> dict:
+    """
+    Função legada mantida apenas para compatibilidade de testes internos.
+    Não é publicada no MCP porque suas opções e taxas são estáticas.
+    O parâmetro valor nunca é reduzido, fracionado ou adaptado pela renda.
+    `aplicar_regra_inteligente` é mantido apenas por compatibilidade e não altera o aporte.
+    """
+    if valor <= 0:
+        return {"recomendacao": "O valor informado não é suficiente para realizar aportes."}
+
+    aporte_inicial = valor
+    analise_estrategica = f"Aplicando exatamente R$ {aporte_inicial:.2f} uma única vez e mantendo o valor investido por {meses_simulacao} meses, eis as projeções:"
+    
+    if aporte_inicial <= 500:
+        opcoes = [
+            {"tipo": "Tesouro Selic", "prazo": "Curto Prazo / Reserva", "taxa_anual": 10.5, "rentabilidade_esperada": "~10.5% ao ano", "risco": "Baixíssimo"},
+            {"tipo": "CDB 100% CDI Liquidez Diária", "prazo": "Curto Prazo / Reserva", "taxa_anual": 10.4, "rentabilidade_esperada": "~10.4% ao ano", "risco": "Baixo (Garantia FGC)"}
+        ]
+    elif aporte_inicial <= 2000:
+        opcoes = [
+            {"tipo": "Tesouro IPCA+", "prazo": "Médio Prazo", "taxa_anual": 10.5, "rentabilidade_esperada": "Inflação + ~6% ao ano", "risco": "Baixo"},
+            {"tipo": "CDBs Prefixados", "prazo": "Médio Prazo (1 a 3 anos)", "taxa_anual": 11.5, "rentabilidade_esperada": "~11% a 12% ao ano", "risco": "Baixo"},
+            {"tipo": "FIIs (Fundos Imobiliários)", "prazo": "Longo Prazo / Renda Passiva", "taxa_anual": 11.0, "rentabilidade_esperada": "Dividendos de ~0.8% a 1% ao mês", "risco": "Médio (Renda Variável)"}
+        ]
+    else:
+        opcoes = [
+            {"tipo": "Tesouro IPCA+ Longo", "prazo": "Longo Prazo / Aposentadoria", "taxa_anual": 10.5, "rentabilidade_esperada": "Inflação + ~6% ao ano", "risco": "Baixo"},
+            {"tipo": "ETFs Globais (ex: WRLD11)", "prazo": "Longo Prazo", "taxa_anual": 15.0, "rentabilidade_esperada": "Acompanha mercado global", "risco": "Alto (Renda Variável)"},
+            {"tipo": "Carteira de FIIs e Ações", "prazo": "Longo Prazo", "taxa_anual": 12.0, "rentabilidade_esperada": "Dividendos mensais + Valorização", "risco": "Médio/Alto"}
+        ]
+        
+    projecoes_mensais = []
+    
+    for op in opcoes:
+        taxa_mensal = (1 + op["taxa_anual"] / 100) ** (1 / 12) - 1
+        serie_mensal = [
+            round(aporte_inicial * ((1 + taxa_mensal) ** mes), 2)
+            for mes in range(0, meses_simulacao + 1)
+        ]
+        montante = serie_mensal[-1]
+
+        projecoes_mensais.append({
+            "nome": op["tipo"],
+            "valores": serie_mensal,
+        })
+        op["simulacao_final_projetada"] = f"R$ {montante:.2f} (em {meses_simulacao} meses)"
+        # Remove a taxa interna para não confundir o LLM
+        del op["taxa_anual"]
+        
+    return {
+        "analise_estrategica": analise_estrategica,
+        "opcoes_sugeridas": opcoes,
+        "projecao_mensal": {
+            "meses": list(range(0, meses_simulacao + 1)),
+            "total_aportado": [round(aporte_inicial, 2)] * (meses_simulacao + 1),
+            "opcoes": projecoes_mensais,
+        },
+        "dica": "Explique as opções de forma clara. O aplicativo renderizará o gráfico com as projeções retornadas."
+    }
+
+@mcp.tool()
+def analisar_fluxo_caixa(cpf: str) -> dict:
+    """Analisa os gastos focando apenas nas parcelas ou despesas integrais que incidem no mês vigente."""
+    with tracer.start_as_current_span("analise-fluxo-caixa-50-30-20") as span:
+        span.set_attribute("usuario.cpf", cpf)
+        logger.info("Iniciando análise de fluxo de caixa", extra={"usuario.cpf": cpf, "acao": "analisar_fluxo"})
+        time.sleep(0.5) # Gargalo proposital para o trace de 500ms
+        
+        client = _get_client_internal(cpf)
+        if not client: return {"error": "Cliente não encontrado"}
+    
+    renda = float(client.get("renda_total", 0.0))
+    hoje = datetime.now()
+    
+    # Puxa todas as transações, pois compras de meses passados podem ter parcelas caindo neste mês
+    res = execute_query("SELECT * FROM transactions WHERE client_id = %s", (client["id"],))
+    
+    total_gasto = 0.0
+    total_pendente = 0.0
+    gastos_por_categoria: Dict[str, float] = {}
+    
+    if res:
+        for t in res:
+            t_date_val = t["transaction_date"]
+            if isinstance(t_date_val, str):
+                t_date = datetime.strptime(t_date_val, "%Y-%m-%d")
+            else:
+                t_date = t_date_val
+            installments = int(t.get("installments") or 1)
+            amount = float(t["amount"])
+            status = t.get("status", "paid")
+            
+            # Calcula quantos meses se passaram desde a compra
+            diff_months = (hoje.year - t_date.year) * 12 + (hoje.month - t_date.month)
+            
+            # Se a diferença de meses for maior ou igual a 0 e menor que o número de parcelas, a parcela incide neste mês
+            if 0 <= diff_months < installments:
+                valor_parcela = amount / installments
+                
+                if status == 'pending':
+                    total_pendente += valor_parcela
+                else:
+                    total_gasto += valor_parcela
+                    gastos_por_categoria[t["category"]] = gastos_por_categoria.get(t["category"], 0.0) + valor_parcela
+                
+    total_comprometido = total_gasto + total_pendente
+    burn_rate = (total_comprometido / renda * 100) if renda > 0 else 0.0
+            
+    return {
+        "mes_analisado": hoje.strftime("%Y-%m"),
+        "renda_mensal": renda,
+        "total_gasto_mes_atual": round(total_gasto, 2),
+        "total_contas_pendentes": round(total_pendente, 2),
+        "total_renda_comprometida": round(total_comprometido, 2),
+        "saldo_livre_projetado": round(renda - total_gasto - total_pendente, 2),
+        "burn_rate_porcentagem": round(burn_rate, 2),
+        "gastos_por_categoria": {k: round(v, 2) for k, v in gastos_por_categoria.items()},
+        "regra_50_30_20": {
+            "Necessidades": round(sum(v for k, v in gastos_por_categoria.items() if k in NECESSIDADES), 2),
+            "Desejos": round(sum(v for k, v in gastos_por_categoria.items() if k not in NECESSIDADES | FUTURO), 2),
+            "Futuro": round(sum(v for k, v in gastos_por_categoria.items() if k in FUTURO), 2)
+        }
+    }

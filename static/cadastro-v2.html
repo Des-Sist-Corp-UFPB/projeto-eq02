@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#07111f">
+    <title>Criar conta | FinancIA's</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/auth-v2.css">
+    <script defer src="https://umami.dsc.rodrigor.com/script.js" data-website-id="256f21b6-a00f-4b43-9bd0-457c56e9ec9e"></script>
+</head>
+<body>
+    <main class="auth-shell">
+        <section class="brand-panel" aria-label="Apresentação do FinancIA's">
+            <a class="brand" href="/" aria-label="FinancIA's - Início">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 19V9m5 10V5m5 14v-7m5 7V3"/>
+                    </svg>
+                </span>
+                FinancIA's
+            </a>
+
+            <div class="brand-copy">
+                <span class="eyebrow">Comece pelo que importa</span>
+                <h1>Uma nova visão do seu <span>futuro.</span></h1>
+                <p>Crie sua conta e transforme informações do dia a dia em um planejamento financeiro simples, visual e personalizado.</p>
+                <div class="feature-row" aria-label="Benefícios">
+                    <span class="feature-pill">Cadastro rápido</span>
+                    <span class="feature-pill">Experiência personalizada</span>
+                    <span class="feature-pill">Controle em um só lugar</span>
+                </div>
+            </div>
+
+            <span class="brand-footer">Seu planejamento começa com clareza.</span>
+        </section>
+
+        <section class="form-panel">
+            <div class="auth-card">
+                <a class="brand mobile-brand" href="/" aria-label="FinancIA's - Início">
+                    <span class="brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 19V9m5 10V5m5 14v-7m5 7V3"/>
+                        </svg>
+                    </span>
+                    FinancIA's
+                </a>
+
+                <h2>Crie sua conta</h2>
+                <p class="auth-subtitle">Leva menos de um minuto. Depois, seu assistente ajuda a organizar os próximos passos.</p>
+
+                <form id="registerForm" class="form-grid" novalidate>
+                    <div class="field">
+                        <label for="nome">Nome completo</label>
+                        <div class="input-wrap">
+                            <input type="text" id="nome" name="nome" autocomplete="name"
+                                placeholder="Como podemos chamar você?" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="email">E-mail</label>
+                        <div class="input-wrap">
+                            <input type="email" id="email" name="email" autocomplete="email"
+                                placeholder="voce@exemplo.com" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="cpf">CPF</label>
+                        <div class="input-wrap">
+                            <input type="text" id="cpf" name="cpf" inputmode="numeric" autocomplete="username"
+                                placeholder="000.000.000-00" maxlength="14" required aria-describedby="cpfHint">
+                        </div>
+                        <p class="field-hint" id="cpfHint">Usaremos o CPF apenas para identificar sua conta.</p>
+                    </div>
+
+                    <div class="field">
+                        <label for="password">Senha</label>
+                        <div class="input-wrap">
+                            <input type="password" id="password" name="password" autocomplete="new-password"
+                                placeholder="Mínimo de 6 caracteres" minlength="6" required>
+                            <button class="input-action" type="button" data-toggle-password="password"
+                                aria-label="Mostrar senha" title="Mostrar senha">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <p id="formMessage" class="form-message" role="alert" aria-live="polite"></p>
+
+                    <button class="submit-button" type="submit">
+                        <span class="spinner" aria-hidden="true"></span>
+                        <span class="button-label">Criar minha conta</span>
+                    </button>
+                </form>
+
+                <p class="auth-switch">Já possui uma conta? <a href="/static/acesso-v2.html">Fazer login</a></p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const form = document.getElementById('registerForm');
+        const cpfInput = document.getElementById('cpf');
+        const messageBox = document.getElementById('formMessage');
+        const submitButton = form.querySelector('.submit-button');
+        const buttonLabel = submitButton.querySelector('.button-label');
+
+        const onlyDigits = (value) => value.replace(/\D/g, '').slice(0, 11);
+
+        const formatCpf = (value) => {
+            const digits = onlyDigits(value);
+            return digits
+                .replace(/^(\d{3})(\d)/, '$1.$2')
+                .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+                .replace(/\.(\d{3})(\d)/, '.$1-$2');
+        };
+
+        const showMessage = (text, success = false) => {
+            messageBox.textContent = text;
+            messageBox.classList.toggle('success', success);
+            messageBox.classList.add('visible');
+        };
+
+        const setLoading = (loading) => {
+            submitButton.disabled = loading;
+            submitButton.classList.toggle('loading', loading);
+            buttonLabel.textContent = loading ? 'Criando conta...' : 'Criar minha conta';
+        };
+
+        cpfInput.addEventListener('input', () => {
+            cpfInput.value = formatCpf(cpfInput.value);
+            messageBox.classList.remove('visible');
+        });
+
+        document.querySelectorAll('[data-toggle-password]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const input = document.getElementById(button.dataset.togglePassword);
+                const showing = input.type === 'text';
+                input.type = showing ? 'password' : 'text';
+                button.setAttribute('aria-label', showing ? 'Mostrar senha' : 'Ocultar senha');
+                button.setAttribute('title', showing ? 'Mostrar senha' : 'Ocultar senha');
+            });
+        });
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            messageBox.classList.remove('visible', 'success');
+
+            const nome = document.getElementById('nome').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const cpf = onlyDigits(cpfInput.value);
+            const password = document.getElementById('password').value;
+
+            if (nome.length < 2) {
+                showMessage('Informe seu nome para continuar.');
+                document.getElementById('nome').focus();
+                return;
+            }
+
+            if (!document.getElementById('email').checkValidity()) {
+                showMessage('Informe um endereço de e-mail válido.');
+                document.getElementById('email').focus();
+                return;
+            }
+
+            if (cpf.length !== 11) {
+                showMessage('Informe um CPF com 11 números.');
+                cpfInput.focus();
+                return;
+            }
+
+            if (password.length < 6) {
+                showMessage('Sua senha precisa ter pelo menos 6 caracteres.');
+                document.getElementById('password').focus();
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, cpf, email, password })
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showMessage(data.detail || 'Não foi possível criar sua conta.');
+                    return;
+                }
+
+                showMessage('Conta criada! Redirecionando você para o login...', true);
+                window.setTimeout(() => {
+                    window.location.href = '/static/acesso-v2.html';
+                }, 1100);
+            } catch (error) {
+                showMessage('Não foi possível conectar ao servidor. Tente novamente em instantes.');
+            } finally {
+                setLoading(false);
+            }
+        });
+    </script>
+</body>
+</html>

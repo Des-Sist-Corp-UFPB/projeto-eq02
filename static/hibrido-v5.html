@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#07111f">
+    <title>Minha área | FinancIA's</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/dashboard-v5.css">
+    <link rel="stylesheet" href="/static/workspace-v5.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script defer src="https://umami.dsc.rodrigor.com/script.js" data-website-id="256f21b6-a00f-4b43-9bd0-457c56e9ec9e"></script>
+</head>
+<body class="hibrido-layout" data-mobile-view="chat">
+    <header class="workspace-header">
+        <div class="workspace-context">
+            <div class="workspace-brand">
+                <span class="workspace-brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 19V9m5 10V5m5 14v-7m5 7V3"/>
+                    </svg>
+                </span>
+                FinancIA's
+            </div>
+            <span class="workspace-divider" aria-hidden="true"></span>
+            <span class="workspace-title">Central financeira inteligente</span>
+        </div>
+        <div class="connection-status" title="Serviços disponíveis">
+            <span class="connection-dot" aria-hidden="true"></span>
+            <span>Assistente conectado</span>
+        </div>
+    </header>
+
+    <main class="workspace-main">
+        <button id="btn-open-chat" class="floating-btn left-btn" type="button">Abrir assistente</button>
+
+        <section class="chat-container workspace-pane" id="chat-pane" aria-label="Assistente financeiro">
+            <div id="chat-loading" class="chat-loading">
+                <span class="chat-loading-spinner" aria-hidden="true"></span>
+                <strong>Preparando seu assistente</strong>
+                <span>Conectando seus dados financeiros...</span>
+            </div>
+            <button id="btn-close-chat" class="pane-action" type="button" title="Ocultar assistente" aria-label="Ocultar assistente">×</button>
+            <iframe src="/chat/" id="chat-frame" title="Chat com o assistente"
+                style="position:relative; z-index:15; opacity:0; transition:opacity 0.35s ease"></iframe>
+        </section>
+
+        <div class="resizer" id="drag-resizer" role="separator" aria-label="Redimensionar painéis" aria-orientation="vertical"></div>
+
+        <button id="btn-open-dash" class="floating-btn right-btn" type="button">Abrir painel</button>
+
+        <section class="dashboard-container workspace-pane" id="dashboard-pane" aria-label="Dashboard financeiro">
+            <button id="btn-close-dash" class="pane-action" type="button" title="Ocultar painel" aria-label="Ocultar painel">×</button>
+            <div id="dashboard-root"></div>
+        </section>
+    </main>
+
+    <nav class="mobile-tabs" aria-label="Áreas da aplicação">
+        <button class="mobile-tab is-active" type="button" data-view="chat">Assistente</button>
+        <button class="mobile-tab" type="button" data-view="dashboard">Dashboard</button>
+    </nav>
+
+    <script src="/static/dashboard-v5.js"></script>
+    <script>
+        const body = document.body;
+        const resizer = document.getElementById('drag-resizer');
+        const chatPane = document.getElementById('chat-pane');
+        const dashPane = document.getElementById('dashboard-pane');
+        const btnCloseChat = document.getElementById('btn-close-chat');
+        const btnCloseDash = document.getElementById('btn-close-dash');
+        const btnOpenChat = document.getElementById('btn-open-chat');
+        const btnOpenDash = document.getElementById('btn-open-dash');
+        let isResizing = false;
+        let lastChatWidth = 43;
+
+        resizer.addEventListener('mousedown', () => {
+            isResizing = true;
+            resizer.classList.add('is-active');
+            document.body.style.cursor = 'col-resize';
+            chatPane.style.pointerEvents = 'none';
+            dashPane.style.pointerEvents = 'none';
+        });
+
+        window.addEventListener('mousemove', (event) => {
+            if (!isResizing || window.innerWidth <= 820) return;
+            const bounds = document.querySelector('.workspace-main').getBoundingClientRect();
+            let width = ((event.clientX - bounds.left) / bounds.width) * 100;
+            width = Math.min(72, Math.max(28, width));
+            chatPane.style.flex = `0 0 ${width}%`;
+            lastChatWidth = width;
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (!isResizing) return;
+            isResizing = false;
+            resizer.classList.remove('is-active');
+            document.body.style.cursor = '';
+            chatPane.style.pointerEvents = '';
+            dashPane.style.pointerEvents = '';
+        });
+
+        btnCloseChat.addEventListener('click', () => {
+            chatPane.style.display = 'none';
+            resizer.style.display = 'none';
+            btnOpenChat.style.display = 'block';
+            dashPane.style.borderRadius = '1rem';
+        });
+
+        btnOpenChat.addEventListener('click', () => {
+            chatPane.style.display = 'flex';
+            chatPane.style.flex = `0 0 ${lastChatWidth}%`;
+            resizer.style.display = 'block';
+            btnOpenChat.style.display = 'none';
+            dashPane.style.borderRadius = '';
+        });
+
+        btnCloseDash.addEventListener('click', () => {
+            dashPane.style.display = 'none';
+            resizer.style.display = 'none';
+            btnOpenDash.style.display = 'block';
+            chatPane.style.flex = '1';
+            chatPane.style.borderRadius = '1rem';
+        });
+
+        btnOpenDash.addEventListener('click', () => {
+            dashPane.style.display = 'block';
+            dashPane.style.flex = '1';
+            chatPane.style.display = 'flex';
+            chatPane.style.flex = `0 0 ${lastChatWidth}%`;
+            chatPane.style.borderRadius = '';
+            resizer.style.display = 'block';
+            btnOpenDash.style.display = 'none';
+        });
+
+        document.querySelectorAll('.mobile-tab').forEach((tab) => {
+            tab.addEventListener('click', () => {
+                body.dataset.mobileView = tab.dataset.view;
+                document.querySelectorAll('.mobile-tab').forEach((item) => {
+                    item.classList.toggle('is-active', item === tab);
+                });
+            });
+        });
+
+        const chatFrame = document.getElementById('chat-frame');
+        const chatLoading = document.getElementById('chat-loading');
+        const revealChat = () => {
+            chatLoading.style.display = 'none';
+            chatFrame.style.opacity = '1';
+            window.isChainlitLoaded = true;
+        };
+
+        const checkLoadInterval = window.setInterval(() => {
+            try {
+                const root = chatFrame.contentWindow.document.getElementById('root');
+                if (root && root.innerHTML.length > 500) {
+                    revealChat();
+                    window.clearInterval(checkLoadInterval);
+                }
+            } catch (error) {
+                // O iframe ainda está inicializando.
+            }
+        }, 300);
+
+        window.setTimeout(() => {
+            if (!window.isChainlitLoaded) {
+                revealChat();
+                window.clearInterval(checkLoadInterval);
+            }
+        }, 10000);
+    </script>
+</body>
+</html>

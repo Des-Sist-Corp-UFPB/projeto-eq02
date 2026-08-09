@@ -1,12 +1,35 @@
-# Não copiar para o contexto Docker (reduz tamanho do build)
-.git
-.gitignore
-target/
-*.md
-.idea/
+.venv/
+venv/
+ENV/
+env/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+
+# Environment files / secrets
+.env
+.env.local
+*.pem
+*.key
+
+# Editor / IDE
 .vscode/
-*.iml
+.idea/
+*.swp
 .DS_Store
-docker/data/
-dependency-check-report*
-spotbugsXml.xml
+
+# Build / packaging
+build/
+dist/
+.eggs/
+*.egg-info/
+
+# Docker / compose overrides
+docker-compose.override.yml
+
+# Local dev files
+scratch/

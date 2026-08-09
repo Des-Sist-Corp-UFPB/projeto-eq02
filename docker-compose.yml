@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  migrations:
+    image: ${APP_IMAGE:-financia-api:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: alembic upgrade head
+    env_file:
+      - .env
+    environment:
+      - OTEL_SERVICE_NAME=dsc-eq02
+      - OTEL_EXPORTER_OTLP_ENDPOINT=https://otel.dsc.rodrigor.com
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer ${OTEL_AUTH_TOKEN}
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+      - OTEL_PYTHON_LOG_CORRELATION=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - levius-network
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-eq02}
+      POSTGRES_USER: ${DB_USER:-eq02}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-k972b3p4mwj6Myw9nhx3}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - levius-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-eq02} -d ${DB_NAME:-eq02}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    image: ${APP_IMAGE:-financia-api:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - FORCE_RECREATE=1
+      - OTEL_SERVICE_NAME=dsc-eq02
+      - OTEL_EXPORTER_OTLP_ENDPOINT=https://otel.dsc.rodrigor.com
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer ${OTEL_AUTH_TOKEN}
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+      - OTEL_PYTHON_LOG_CORRELATION=true
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://127.0.0.1:8080/ping" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 300s
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_started
+    networks:
+      - levius-network
+
+networks:
+  levius-network:
+    driver: bridge
